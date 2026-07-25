@@ -9,11 +9,11 @@ The project follows a **Hexagonal (Ports & Adapters)** architecture split across
 ```
 risk-based-framework/
 ├── risk-based-framework-core/          # Pure library — domain model, ports, adapters
-│   ├── domain/model/                   # Value objects (Artifact, Vulnerability, RiskWeights, ...)
-│   ├── application/port/in|out/        # Inbound use case + 10 outbound port interfaces
+│   ├── domain/model/                   # Entities and Value objects (Artifact, Vulnerability, RiskWeights, ...)
+│   ├── application/port/in|out/        # Inbound use case + outbound port interfaces
 │   ├── application/service/            # AnalyseDependencyRiskService — pipeline orchestrator
 │   └── adapter/out/                    # Concrete implementations (OSV, EPSS, SootUp, Z3, ...)
-└── risk-based-framework-maven-plugin/  # Thin Mojo wrapper — composition root only
+└── risk-based-framework-maven-plugin/  # Composition root
     └── AnalyseMojo.java                # Wires all adapters; exposes @Parameter config
 ```
 
