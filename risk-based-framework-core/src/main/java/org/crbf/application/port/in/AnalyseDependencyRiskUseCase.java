@@ -10,8 +10,7 @@ public interface AnalyseDependencyRiskUseCase {
     /**
      * @param projectPath Root directory of the project being analysed.
      * @param classesPath Path to the compiled bytecode output directory
-     *                    (e.g. {@code target/classes} for Maven,
-     *                    {@code build/classes/java/main} for Gradle).
+     *                    (e.g. {@code target/classes} for Maven.
      *                    Provided by the caller so the service remains
      *                    agnostic of the build tool.
      * @param prebuiltGraph Dependency paths resolved by the build tool.
