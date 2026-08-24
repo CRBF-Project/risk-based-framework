@@ -1,0 +1,818 @@
+{
+  "projectName" : "webdrivermanager",
+  "totalDependenciesScanned" : 240,
+  "totalDependencyPaths" : 250,
+  "scannedArtifacts" : [ "org.slf4j:slf4j-api:2.0.18", "com.google.code.gson:gson:2.14.0", "com.google.errorprone:error_prone_annotations:2.48.0", "com.github.docker-java:docker-java:3.7.1", "com.github.docker-java:docker-java-core:3.7.1", "com.github.docker-java:docker-java-api:3.7.1", "com.fasterxml.jackson.core:jackson-annotations:2.20", "com.fasterxml.jackson.core:jackson-databind:2.20.1", "com.fasterxml.jackson.core:jackson-core:2.20.1", "org.slf4j:jcl-over-slf4j:1.7.30", "com.github.docker-java:docker-java-transport-httpclient5:3.7.1", "com.github.docker-java:docker-java-transport:3.7.1", "net.java.dev.jna:jna:5.18.1", "org.brotli:dec:0.1.2", "org.apache.commons:commons-lang3:3.20.0", "org.apache.commons:commons-compress:1.28.0", "commons-codec:commons-codec:1.19.0", "commons-io:commons-io:2.20.0", "org.apache.httpcomponents.client5:httpclient5:5.6.1", "org.apache.httpcomponents.core5:httpcore5:5.4", "org.apache.httpcomponents.core5:httpcore5-h2:5.4", "org.seleniumhq.selenium:selenium-java:4.47.0", "org.seleniumhq.selenium:selenium-api:4.47.0", "org.seleniumhq.selenium:selenium-chrome-driver:4.47.0", "org.seleniumhq.selenium:selenium-chromium-driver:4.47.0", "org.seleniumhq.selenium:selenium-devtools-latest:4.47.0", "org.seleniumhq.selenium:selenium-devtools-v149:4.47.0", "org.seleniumhq.selenium:selenium-devtools-v150:4.47.0", "org.seleniumhq.selenium:selenium-devtools-v151:4.47.0", "org.seleniumhq.selenium:selenium-edge-driver:4.47.0", "org.seleniumhq.selenium:selenium-firefox-driver:4.47.0", "org.seleniumhq.selenium:selenium-ie-driver:4.47.0", "org.seleniumhq.selenium:selenium-remote-driver:4.47.0", "io.opentelemetry:opentelemetry-api:1.65.0", "io.opentelemetry:opentelemetry-context:1.65.0", "io.opentelemetry:opentelemetry-common:1.65.0", "io.opentelemetry:opentelemetry-exporter-logging:1.65.0", "io.opentelemetry:opentelemetry-sdk-common:1.65.0", "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure-spi:1.65.0", "io.opentelemetry:opentelemetry-sdk-extension-autoconfigure:1.65.0", "io.opentelemetry:opentelemetry-sdk-trace:1.65.0", "io.opentelemetry:opentelemetry-sdk:1.65.0", "io.opentelemetry:opentelemetry-sdk-metrics:1.65.0", "io.opentelemetry:opentelemetry-sdk-logs:1.65.0", "org.seleniumhq.selenium:selenium-os:4.47.0", "org.seleniumhq.selenium:selenium-safari-driver:4.47.0", "org.seleniumhq.selenium:selenium-support:4.47.0", "io.javalin:javalin:4.6.8", "org.eclipse.jetty:jetty-server:9.4.51.v20230217", "javax.servlet:javax.servlet-api:3.1.0", "org.eclipse.jetty:jetty-http:9.4.51.v20230217", "org.eclipse.jetty:jetty-util:9.4.51.v20230217", "org.eclipse.jetty:jetty-io:9.4.51.v20230217", "org.eclipse.jetty:jetty-webapp:9.4.51.v20230217", "org.eclipse.jetty:jetty-xml:9.4.51.v20230217", "org.eclipse.jetty:jetty-servlet:9.4.51.v20230217", "org.eclipse.jetty:jetty-security:9.4.51.v20230217", "org.eclipse.jetty:jetty-util-ajax:9.4.51.v20230217", "org.eclipse.jetty.websocket:websocket-server:9.4.51.v20230217", "org.eclipse.jetty.websocket:websocket-common:9.4.51.v20230217", "org.eclipse.jetty.websocket:websocket-api:9.4.51.v20230217", "org.eclipse.jetty.websocket:websocket-client:9.4.51.v20230217", "org.eclipse.jetty:jetty-client:9.4.51.v20230217", "org.eclipse.jetty.websocket:websocket-servlet:9.4.51.v20230217", "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.32", "org.jetbrains.kotlin:kotlin-stdlib:1.5.32", "org.jetbrains:annotations:13.0", "org.jetbrains.kotlin:kotlin-stdlib-common:1.5.32", "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.5.32", "ch.qos.logback:logback-classic:1.5.18", "ch.qos.logback:logback-core:1.5.18", "org.junit.jupiter:junit-jupiter:6.1.3", "org.junit.jupiter:junit-jupiter-api:6.1.3", "org.opentest4j:opentest4j:1.3.0", "org.junit.platform:junit-platform-commons:6.1.3", "org.apiguardian:apiguardian-api:1.1.2", "org.junit.jupiter:junit-jupiter-params:6.1.3", "org.junit.jupiter:junit-jupiter-engine:6.1.3", "org.junit.platform:junit-platform-engine:6.1.3", "org.assertj:assertj-core:3.27.7", "net.bytebuddy:byte-buddy:1.18.3", "org.mock-server:mockserver-junit-jupiter:7.6.0", "org.mock-server:mockserver-netty:7.6.0", "org.mock-server:mockserver-client-java:7.6.0", "org.mock-server:mockserver-core:7.6.0", "com.lmax:disruptor:4.0.0", "jakarta.servlet:jakarta.servlet-api:6.1.0", "io.netty:netty-codec-socks:4.2.17.Final", "io.netty:netty-handler-proxy:4.2.17.Final", "com.google.protobuf:protobuf-java-util:4.35.1", "com.jcraft:jzlib:1.1.3", "com.fasterxml.uuid:java-uuid-generator:5.2.0", "org.bouncycastle:bcprov-jdk18on:1.85", "com.nimbusds:nimbus-jose-jwt:10.9.1", "org.apache.velocity:velocity-engine-scripting:2.4.1", "org.apache.velocity:velocity-engine-core:2.4.1", "org.apache.velocity.tools:velocity-tools-generic:3.1", "org.apache.commons:commons-digester3:3.2", "com.github.cliftonlabs:json-simple:3.0.2", "commons-beanutils:commons-beanutils:1.11.0", "commons-logging:commons-logging:1.3.5", "commons-collections:commons-collections:3.2.2", "com.samskivert:jmustache:1.16", "net.datafaker:datafaker:2.7.0", "com.github.curious-odd-man:rgxgen:3.1", "com.googlecode.libphonenumber:libphonenumber:9.0.33", "com.dylibso.chicory:runtime:1.7.5", "com.dylibso.chicory:wasm:1.7.5", "org.hdrhistogram:HdrHistogram:2.2.2", "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.1", "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.22.1", "net.javacrumbs.json-unit:json-unit-core:6.1.0", "org.hamcrest:hamcrest-core:3.0", "org.hamcrest:hamcrest:3.0", "com.networknt:json-schema-validator:3.0.6", "com.ethlo.time:itu:1.14.0", "tools.jackson.core:jackson-databind:3.1.4", "tools.jackson.core:jackson-core:3.1.4", "tools.jackson.dataformat:jackson-dataformat-yaml:3.1.4", "org.snakeyaml:snakeyaml-engine:3.0.1", "com.jayway.jsonpath:json-path:3.0.0", "net.minidev:json-smart:2.6.0", "net.minidev:accessors-smart:2.6.0", "org.ow2.asm:asm:9.7.1", "com.github.java-json-tools:json-patch:1.13", "com.github.java-json-tools:msg-simple:1.2", "com.github.java-json-tools:btf:1.3", "com.github.java-json-tools:jackson-coreutils:2.0", "io.swagger.parser.v3:swagger-parser:2.1.46", "io.swagger.parser.v3:swagger-parser-v2-converter:2.1.46", "io.swagger:swagger-core:1.6.16", "io.swagger:swagger-models:1.6.16", "io.swagger:swagger-annotations:1.6.16", "io.swagger:swagger-parser:1.0.76", "io.swagger:swagger-parser-safe-url-resolver:1.0.76", "io.swagger:swagger-compat-spec-parser:1.0.76", "com.github.java-json-tools:json-schema-validator:2.2.14", "com.github.java-json-tools:jackson-coreutils-equivalence:1.0", "com.github.java-json-tools:json-schema-core:1.2.14", "com.github.java-json-tools:uri-template:0.10", "joda-time:joda-time:2.10.5", "net.sf.jopt-simple:jopt-simple:5.0.4", "org.apache.httpcomponents:httpclient:4.5.14", "org.apache.httpcomponents:httpcore:4.4.16", "io.swagger.core.v3:swagger-models:2.2.52", "io.swagger.parser.v3:swagger-parser-core:2.1.46", "io.swagger.parser.v3:swagger-parser-v3:2.1.46", "io.swagger.core.v3:swagger-core:2.2.52", "io.swagger.core.v3:swagger-annotations:2.2.52", "jakarta.validation:jakarta.validation-api:2.0.2", "io.swagger.parser.v3:swagger-parser-safe-url-resolver:2.1.46", "org.mozilla:rhino:1.9.1", "jakarta.xml.bind:jakarta.xml.bind-api:4.0.5", "jakarta.activation:jakarta.activation-api:2.1.4", "com.sun.xml.bind:jaxb-impl:4.0.9", "com.sun.xml.bind:jaxb-core:4.0.9", "org.eclipse.angus:angus-activation:2.0.3", "org.xmlunit:xmlunit-core:2.13.0", "org.xmlunit:xmlunit-placeholders:2.13.0", "org.apache.commons:commons-text:1.15.0", "com.google.code.findbugs:jsr305:3.0.2", "io.github.classgraph:classgraph:4.8.191", "io.prometheus:prometheus-metrics-core:1.8.0", "io.prometheus:prometheus-metrics-config:1.8.0", "io.prometheus:prometheus-metrics-tracer-initializer:1.8.0", "io.prometheus:prometheus-metrics-tracer-common:1.8.0", "io.prometheus:prometheus-metrics-tracer-otel:1.8.0", "io.prometheus:prometheus-metrics-tracer-otel-agent:1.8.0", "io.prometheus:prometheus-metrics-exposition-formats:1.8.0", "io.prometheus:prometheus-metrics-exposition-textformats:1.8.0", "io.prometheus:prometheus-metrics-model:1.8.0", "org.xerial.snappy:snappy-java:1.1.10.8", "io.opentelemetry:opentelemetry-exporter-otlp:1.65.0", "io.opentelemetry:opentelemetry-exporter-otlp-common:1.65.0", "io.opentelemetry:opentelemetry-exporter-sender-jdk:1.65.0", "io.opentelemetry:opentelemetry-exporter-common:1.65.0", "io.netty:netty-codec:4.2.17.Final", "io.netty:netty-codec-protobuf:4.2.17.Final", "io.netty:netty-codec-marshalling:4.2.17.Final", "io.netty:netty-codec-http2:4.2.17.Final", "io.netty:netty-codec-dns:4.2.17.Final", "io.netty:netty-tcnative-boringssl-static:2.0.81.Final", "io.netty:netty-tcnative-classes:2.0.81.Final", "io.netty:netty-transport-classes-epoll:4.2.17.Final", "io.netty:netty-transport-native-epoll:4.2.17.Final", "io.netty:netty-codec-http3:4.2.17.Final", "io.netty:netty-codec-classes-quic:4.2.17.Final", "io.netty:netty-codec-native-quic:4.2.17.Final", "info.picocli:picocli:4.7.7", "org.seleniumhq.selenium:selenium-grid:4.47.0", "com.beust:jcommander:1.82", "com.github.ben-manes.caffeine:caffeine:3.2.4", "com.google.auto.service:auto-service-annotations:1.1.1", "com.google.guava:guava:33.6.0-jre", "com.google.guava:failureaccess:1.0.3", "com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava", "com.google.j2objc:j2objc-annotations:3.1", "com.google.protobuf.nano:protobuf-javanano:3.1.0", "com.google.protobuf:protobuf-java:4.35.1", "com.graphql-java:graphql-java:26.0", "com.graphql-java:java-dataloader:6.0.0", "org.reactivestreams:reactive-streams:1.0.3", "dev.failsafe:failsafe:3.3.2", "io.lettuce:lettuce-core:7.6.0.RELEASE", "redis.clients.authentication:redis-authx-core:0.1.1-beta2", "io.projectreactor:reactor-core:3.6.6", "io.netty:netty-resolver-dns:4.2.13.Final", "io.netty:netty-buffer:4.2.17.Final", "io.netty:netty-codec-http:4.2.17.Final", "io.netty:netty-codec-base:4.2.17.Final", "io.netty:netty-codec-compression:4.2.17.Final", "io.netty:netty-common:4.2.17.Final", "io.netty:netty-handler:4.2.17.Final", "io.netty:netty-resolver:4.2.17.Final", "io.netty:netty-transport-native-unix-common:4.2.17.Final", "io.netty:netty-transport:4.2.17.Final", "org.bouncycastle:bcpkix-jdk18on:1.85", "org.bouncycastle:bcutil-jdk18on:1.85", "org.jboss.marshalling:jboss-marshalling:2.3.0", "org.jspecify:jspecify:1.0.1", "org.redisson:redisson:4.7.0", "javax.cache:cache-api:1.1.1", "io.reactivex.rxjava3:rxjava:3.1.12", "com.esotericsoftware:kryo:5.6.2", "com.esotericsoftware:reflectasm:1.11.9", "com.esotericsoftware:minlog:1.3.1", "org.yaml:snakeyaml:2.6", "org.jodd:jodd-util:6.3.0", "org.seleniumhq.selenium:selenium-http:4.47.0", "org.seleniumhq.selenium:selenium-json:4.47.0", "org.seleniumhq.selenium:selenium-manager:4.47.0", "org.tomlj:tomlj:1.1.1", "org.antlr:antlr4-runtime:4.11.1", "org.checkerframework:checker-qual:3.21.2", "org.zeromq:jeromq:0.6.0", "eu.neilalexander:jnacl:1.0.0", "org.mockito:mockito-junit-jupiter:5.23.0", "org.mockito:mockito-core:5.23.0", "net.bytebuddy:byte-buddy-agent:1.17.7", "org.objenesis:objenesis:3.3" ],
+  "findings" : [ {
+    "artifact" : "com.fasterxml.jackson.core:jackson-databind:2.20.1",
+    "vulnerabilities" : [ {
+      "id" : "GHSA-3PJW-73GF-8QR5",
+      "severity" : "MEDIUM",
+      "cvss" : {
+        "score" : 6.5,
+        "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N"
+      },
+      "epss" : {
+        "score" : 0.00247,
+        "percentile" : 0.16319
+      },
+      "cwes" : [ "CWE-915" ],
+      "aliases" : [ "CVE-2026-59888" ],
+      "summary" : "jackson-databind: @JsonIgnore on a Record property is bypassed with a PropertyNamingStrategy",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2026-59888",
+      "fixCommitUrl" : "",
+      "published" : "2026-07-21T19:33:06Z",
+      "modified" : "2026-07-25T03:29:37.657238077Z"
+    }, {
+      "id" : "GHSA-5JMJ-H7XM-6Q6V",
+      "severity" : "MEDIUM",
+      "cvss" : {
+        "score" : 5.3,
+        "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N"
+      },
+      "epss" : {
+        "score" : 0.00345,
+        "percentile" : 0.27708
+      },
+      "cwes" : [ "CWE-915" ],
+      "aliases" : [ "CVE-2026-54515" ],
+      "summary" : "jackson-databind has case-insensitive deserialization bypasses per-property @JsonIgnoreProperties",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2026-54515",
+      "fixCommitUrl" : "",
+      "published" : "2026-06-23T21:23:58Z",
+      "modified" : "2026-07-16T21:30:21.943601698Z"
+    }, {
+      "id" : "GHSA-HGJ6-7826-R7M5",
+      "severity" : "MEDIUM",
+      "cvss" : {
+        "score" : 5.3,
+        "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N"
+      },
+      "epss" : {
+        "score" : 0.00219,
+        "percentile" : 0.1267
+      },
+      "cwes" : [ "CWE-918" ],
+      "aliases" : [ "CVE-2026-54514" ],
+      "summary" : "jackson-databind: InetSocketAddress deserialization triggers eager DNS resolution (SSRF)",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2026-54514",
+      "fixCommitUrl" : "",
+      "published" : "2026-06-23T21:22:54Z",
+      "modified" : "2026-07-20T21:30:31.809711002Z"
+    }, {
+      "id" : "GHSA-J3RV-43J4-C7QM",
+      "severity" : "HIGH",
+      "cvss" : {
+        "score" : 8.1,
+        "vector" : "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+      },
+      "epss" : {
+        "score" : 0.00779,
+        "percentile" : 0.52758
+      },
+      "cwes" : [ "CWE-184", "CWE-502" ],
+      "aliases" : [ "CVE-2026-54512" ],
+      "summary" : "jackson-databind has a PolymorphicTypeValidator bypass via generic type parameters that allows arbitrary class instantiation",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2026-54512",
+      "fixCommitUrl" : "",
+      "published" : "2026-06-23T21:21:38Z",
+      "modified" : "2026-07-20T21:30:40.174709386Z"
+    }, {
+      "id" : "GHSA-RMJ7-2VXQ-3G9F",
+      "severity" : "HIGH",
+      "cvss" : {
+        "score" : 8.1,
+        "vector" : "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:H"
+      },
+      "epss" : {
+        "score" : 0.00712,
+        "percentile" : 0.50528
+      },
+      "cwes" : [ "CWE-184" ],
+      "aliases" : [ "CVE-2026-54513" ],
+      "summary" : "jackson-databind has an array subtype allowlist bypass in BasicPolymorphicTypeValidator (allowIfSubTypeIsArray)",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2026-54513",
+      "fixCommitUrl" : "",
+      "published" : "2026-06-23T21:22:15Z",
+      "modified" : "2026-08-14T15:46:50.175670907Z"
+    } ],
+    "reachability" : {
+      "status" : "UNREACHABLE",
+      "reachableMethods" : [ ],
+      "reachable" : false
+    },
+    "compatibility" : {
+      "status" : "UNKNOWN",
+      "breakingChangeCount" : 0,
+      "breakingChangesByType" : { },
+      "topBreakingChanges" : [ ],
+      "contextuallyAdjusted" : false
+    },
+    "remediation" : {
+      "decision" : "RECOMMENDED",
+      "rationale" : "Optimal: maximises risk reduction within effort budget. Risk=0,41 | Effort=2,0 units (UNKNOWN) | StabilityScore=N/A.",
+      "riskReduction" : 0.407337,
+      "effortCost" : 2.0,
+      "recommendedVersion" : "2.18.9"
+    },
+    "stabilitySummary" : "Current: TOOD=0 days, VersionLag=0, LatestVersion=2.20.1 | Fix: no Goblin data"
+  }, {
+    "artifact" : "com.fasterxml.jackson.core:jackson-core:2.20.1",
+    "vulnerabilities" : [ {
+      "id" : "GHSA-72HV-8253-57QQ",
+      "severity" : "MEDIUM",
+      "cvss" : {
+        "score" : 6.9,
+        "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:L/SC:N/SI:N/SA:N"
+      },
+      "epss" : {
+        "score" : 0.0031,
+        "percentile" : 0.23787
+      },
+      "cwes" : [ "CWE-770" ],
+      "aliases" : [ "CVE-2026-18401" ],
+      "summary" : "jackson-core: Number Length Constraint Bypass in Async Parser Leads to Potential DoS Condition",
+      "advisoryUrl" : "https://github.com/FasterXML/jackson-core/security/advisories/GHSA-72hv-8253-57qq",
+      "fixCommitUrl" : "",
+      "published" : "2026-02-28T02:01:05Z",
+      "modified" : "2026-08-05T03:41:56.833090517Z"
+    }, {
+      "id" : "GHSA-R7WM-3CXJ-WFF9",
+      "severity" : "HIGH",
+      "cvss" : {
+        "score" : 8.7,
+        "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:N/VI:N/VA:H/SC:N/SI:N/SA:N"
+      },
+      "epss" : null,
+      "cwes" : [ "CWE-770" ],
+      "aliases" : [ ],
+      "summary" : "jackson-core: Async parser maxNumberLength bypass via chunked digit accumulation (incomplete fix for GHSA-72hv-8253-57qq)",
+      "advisoryUrl" : "https://github.com/FasterXML/jackson-core/security/advisories/GHSA-r7wm-3cxj-wff9",
+      "fixCommitUrl" : "",
+      "published" : "2026-07-21T21:58:53Z",
+      "modified" : "2026-08-05T03:41:57.338106514Z"
+    } ],
+    "reachability" : {
+      "status" : "UNREACHABLE",
+      "reachableMethods" : [ ],
+      "reachable" : false
+    },
+    "compatibility" : {
+      "status" : "UNKNOWN",
+      "breakingChangeCount" : 0,
+      "breakingChangesByType" : { },
+      "topBreakingChanges" : [ ],
+      "contextuallyAdjusted" : false
+    },
+    "remediation" : {
+      "decision" : "RECOMMENDED",
+      "rationale" : "Optimal: maximises risk reduction within effort budget. Risk=0,44 | Effort=2,0 units (UNKNOWN) | StabilityScore=N/A.",
+      "riskReduction" : 0.43592999999999993,
+      "effortCost" : 2.0,
+      "recommendedVersion" : "2.18.8"
+    },
+    "stabilitySummary" : "Current: TOOD=0 days, VersionLag=0, LatestVersion=2.20.1 | Fix: no Goblin data"
+  }, {
+    "artifact" : "org.apache.httpcomponents.client5:httpclient5:5.6.1",
+    "vulnerabilities" : [ {
+      "id" : "GHSA-HJCP-JMPX-G3QM",
+      "severity" : "MEDIUM",
+      "cvss" : {
+        "score" : 5.3,
+        "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+      },
+      "epss" : {
+        "score" : 0.00359,
+        "percentile" : 0.29176
+      },
+      "cwes" : [ "CWE-772" ],
+      "aliases" : [ "CVE-2026-64607" ],
+      "summary" : "Apache HttpComponents Client: Connection Leak on Content-Encoding Decode Error Leads to Pool Exhaustion DoS",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2026-64607",
+      "fixCommitUrl" : "",
+      "published" : "2026-07-31T12:30:30Z",
+      "modified" : "2026-08-14T21:42:00.776314912Z"
+    } ],
+    "reachability" : {
+      "status" : "REACHABLE_PROBABLE",
+      "reachableMethods" : [ "org.apache.hc.client5.http.protocol.HttpClientContext#create()", "org.apache.hc.client5.http.impl.io.BasicHttpClientConnectionManager#<init>()", "org.apache.hc.client5.http.auth.AuthScope#<init>(HttpHost)", "org.apache.hc.client5.http.auth.UsernamePasswordCredentials#equals(Object)", "org.apache.hc.client5.http.impl.io.BasicHttpClientConnectionManager#<clinit>()", "org.apache.hc.client5.http.config.RequestConfig#custom()", "org.apache.hc.client5.http.config.RequestConfig#<clinit>()", "org.apache.hc.client5.http.auth.AuthScope#<init>(String, int)", "org.apache.hc.client5.http.config.ConnectionConfig#custom()", "org.apache.hc.client5.http.auth.UsernamePasswordCredentials#<init>(String, char[])", "org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider#<init>()", "org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder#create()", "org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider#setCredentials(AuthScope, Credentials)", "org.apache.hc.client5.http.config.ConnectionConfig#<clinit>()", "org.apache.hc.client5.http.auth.UsernamePasswordCredentials#toString()", "org.apache.hc.client5.http.ssl.AbstractClientTlsStrategy#<clinit>()", "org.apache.hc.client5.http.auth.AuthScope#toString()", "org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy#<init>(SSLContext, HostnameVerifier)", "org.apache.hc.client5.http.impl.io.BasicHttpClientConnectionManager#setConnectionConfig(ConnectionConfig)", "org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider#toString()", "org.apache.hc.client5.http.auth.AuthScope#equals(Object)" ],
+      "reachable" : true
+    },
+    "compatibility" : {
+      "status" : "COMPATIBLE",
+      "breakingChangeCount" : 0,
+      "breakingChangesByType" : {
+        "BINARY" : 0,
+        "SOURCE" : 0,
+        "OTHER" : 0
+      },
+      "topBreakingChanges" : [ ],
+      "contextuallyAdjusted" : false
+    },
+    "remediation" : {
+      "decision" : "MANDATORY",
+      "rationale" : "Optimal: maximises risk reduction within effort budget. Risk=2,66 | Effort=1,0 units (COMPATIBLE) | StabilityScore=0,00.",
+      "riskReduction" : 2.66077,
+      "effortCost" : 1.0,
+      "recommendedVersion" : "5.6.3"
+    },
+    "stabilitySummary" : "Current: TOOD=0 days, VersionLag=0, LatestVersion=5.6.1 | Fix: StabilityScore=0,00 (AdoptionRate=0%, Lifespan=0 days, MaintenanceRate=0,0000 rel/day) | Upgrade path: CLEAN | netRiskDelta: 1,00"
+  }, {
+    "artifact" : "org.apache.httpcomponents.core5:httpcore5:5.4",
+    "vulnerabilities" : [ {
+      "id" : "GHSA-HF6X-8P5F-CGMF",
+      "severity" : "HIGH",
+      "cvss" : {
+        "score" : 7.5,
+        "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+      },
+      "epss" : {
+        "score" : 0.00565,
+        "percentile" : 0.44345
+      },
+      "cwes" : [ "CWE-400" ],
+      "aliases" : [ "CVE-2026-54399" ],
+      "summary" : "Apache HttpComponents Core HTTP/1 header parsing can cause memory-exhaustion denial of service",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2026-54399",
+      "fixCommitUrl" : "",
+      "published" : "2026-07-01T18:31:55Z",
+      "modified" : "2026-08-13T21:42:04.308288254Z"
+    } ],
+    "reachability" : {
+      "status" : "REACHABLE_PROBABLE",
+      "reachableMethods" : [ "org.apache.hc.core5.net.URIBuilder#setParameter(String, String)", "org.apache.hc.core5.http.message.BasicHttpRequest#getUri()", "org.apache.hc.core5.net.URIBuilder#<init>(String)", "org.apache.hc.core5.http.HttpHost#toString()", "org.apache.hc.core5.http.HttpHost#equals(Object)", "org.apache.hc.core5.http.message.BasicHttpRequest#addHeader(String, Object)", "org.apache.hc.core5.net.URIBuilder#build()", "org.apache.hc.core5.http.message.BasicClassicHttpRequest#setEntity(HttpEntity)", "org.apache.hc.core5.http.message.BasicHttpRequest#setHeader(String, Object)", "org.apache.hc.core5.ssl.SSLContexts#custom()", "org.apache.hc.core5.http.io.entity.StringEntity#<init>(String)", "org.apache.hc.core5.http.message.HeaderGroup#<clinit>()", "org.apache.hc.core5.http.HttpHost#<clinit>()", "org.apache.hc.core5.http.HttpHost#<init>(String, int)", "org.apache.hc.core5.net.URIBuilder#<clinit>()", "org.apache.hc.core5.net.URIBuilder#toString()", "org.apache.hc.core5.http.io.entity.AbstractHttpEntity#toString()", "org.apache.hc.core5.http.HttpHost#getHostName()", "org.apache.hc.core5.http.io.entity.StringEntity#getContent()", "org.apache.hc.core5.http.HttpHost#getPort()" ],
+      "reachable" : true
+    },
+    "compatibility" : {
+      "status" : "COMPATIBLE",
+      "breakingChangeCount" : 0,
+      "breakingChangesByType" : {
+        "BINARY" : 0,
+        "SOURCE" : 0,
+        "OTHER" : 0
+      },
+      "topBreakingChanges" : [ ],
+      "contextuallyAdjusted" : false
+    },
+    "remediation" : {
+      "decision" : "MANDATORY",
+      "rationale" : "Optimal: maximises risk reduction within effort budget. Risk=3,77 | Effort=1,0 units (COMPATIBLE) | StabilityScore=0,00.",
+      "riskReduction" : 3.76695,
+      "effortCost" : 1.0,
+      "recommendedVersion" : "5.4.3"
+    },
+    "stabilitySummary" : "Current: TOOD=0 days, VersionLag=0, LatestVersion=5.4 | Fix: StabilityScore=0,00 (AdoptionRate=0%, Lifespan=0 days, MaintenanceRate=0,0000 rel/day) | Upgrade path: CLEAN | netRiskDelta: 1,00"
+  }, {
+    "artifact" : "org.apache.httpcomponents.core5:httpcore5-h2:5.4",
+    "vulnerabilities" : [ {
+      "id" : "GHSA-V3JC-474W-2WM6",
+      "severity" : "HIGH",
+      "cvss" : {
+        "score" : 7.5,
+        "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+      },
+      "epss" : {
+        "score" : 0.00587,
+        "percentile" : 0.45392
+      },
+      "cwes" : [ "CWE-400" ],
+      "aliases" : [ "CVE-2026-54428" ],
+      "summary" : "Apache HttpComponents Core: HPackDecoder Unlimited Header List Size Before SETTINGS ACK",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2026-54428",
+      "fixCommitUrl" : "",
+      "published" : "2026-07-01T18:31:56Z",
+      "modified" : "2026-08-14T15:42:06.375163307Z"
+    } ],
+    "reachability" : {
+      "status" : "UNREACHABLE",
+      "reachableMethods" : [ ],
+      "reachable" : false
+    },
+    "compatibility" : {
+      "status" : "UNKNOWN",
+      "breakingChangeCount" : 0,
+      "breakingChangesByType" : { },
+      "topBreakingChanges" : [ ],
+      "contextuallyAdjusted" : false
+    },
+    "remediation" : {
+      "decision" : "DEFER",
+      "rationale" : "Deferred by optimiser: residual risk 0,38 within acceptable threshold given sprint budget.",
+      "riskReduction" : 0.0,
+      "effortCost" : 0.0,
+      "recommendedVersion" : "5.4.3"
+    },
+    "stabilitySummary" : "Current: TOOD=0 days, VersionLag=0, LatestVersion=5.4 | Fix: no Goblin data"
+  }, {
+    "artifact" : "org.eclipse.jetty:jetty-server:9.4.51.v20230217",
+    "vulnerabilities" : [ {
+      "id" : "GHSA-7P3P-8QV8-M2VH",
+      "severity" : "MEDIUM",
+      "cvss" : {
+        "score" : 5.3,
+        "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N"
+      },
+      "epss" : {
+        "score" : 0.00196,
+        "percentile" : 0.09687
+      },
+      "cwes" : [ "CWE-20" ],
+      "aliases" : [ "CVE-2026-6790" ],
+      "summary" : "Eclipse Jetty: HTTP Authority/Host mismatch",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2026-6790",
+      "fixCommitUrl" : "",
+      "published" : "2026-07-22T22:56:43Z",
+      "modified" : "2026-07-24T09:14:31.131891317Z"
+    }, {
+      "id" : "GHSA-G8M5-722R-8WHQ",
+      "severity" : "MEDIUM",
+      "cvss" : {
+        "score" : 5.9,
+        "vector" : "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+      },
+      "epss" : {
+        "score" : 0.0103,
+        "percentile" : 0.606
+      },
+      "cwes" : [ "CWE-400", "CWE-770" ],
+      "aliases" : [ "CVE-2024-8184" ],
+      "summary" : "Eclipse Jetty's ThreadLimitHandler.getRemote() vulnerable to remote DoS attacks",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2024-8184",
+      "fixCommitUrl" : "",
+      "published" : "2024-10-14T21:08:38Z",
+      "modified" : "2026-02-04T02:22:04.476941Z"
+    }, {
+      "id" : "GHSA-Q4RV-GQ96-W7C5",
+      "severity" : "HIGH",
+      "cvss" : {
+        "score" : 7.2,
+        "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:L/A:N"
+      },
+      "epss" : {
+        "score" : 0.00525,
+        "percentile" : 0.42298
+      },
+      "cwes" : [ "CWE-404" ],
+      "aliases" : [ "CVE-2024-13009" ],
+      "summary" : "**UNSUPPORTED WHEN ASSIGNED** GzipHandler causes part of request body to be seen as request body of a separate request",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2024-13009",
+      "fixCommitUrl" : "",
+      "published" : "2025-05-08T19:28:34Z",
+      "modified" : "2026-02-04T02:18:48.851455Z"
+    } ],
+    "reachability" : {
+      "status" : "UNREACHABLE",
+      "reachableMethods" : [ ],
+      "reachable" : false
+    },
+    "compatibility" : {
+      "status" : "UNKNOWN",
+      "breakingChangeCount" : 0,
+      "breakingChangesByType" : { },
+      "topBreakingChanges" : [ ],
+      "contextuallyAdjusted" : false
+    },
+    "remediation" : {
+      "decision" : "DEFER",
+      "rationale" : "Deferred by optimiser: residual risk 0,36 within acceptable threshold given sprint budget.",
+      "riskReduction" : 0.0,
+      "effortCost" : 0.0,
+      "recommendedVersion" : "12.0.35"
+    },
+    "stabilitySummary" : "Current: TOOD=0 days, VersionLag=0, LatestVersion=9.4.51.v20230217 | Fix: no Goblin data"
+  }, {
+    "artifact" : "org.eclipse.jetty:jetty-http:9.4.51.v20230217",
+    "vulnerabilities" : [ {
+      "id" : "GHSA-355H-QMC2-WPWF",
+      "severity" : "HIGH",
+      "cvss" : {
+        "score" : 7.4,
+        "vector" : "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:H/I:H/A:N"
+      },
+      "epss" : {
+        "score" : 0.01213,
+        "percentile" : 0.65737
+      },
+      "cwes" : [ "CWE-444" ],
+      "aliases" : [ "CVE-2026-2332" ],
+      "summary" : "Jetty has HTTP Request Smuggling via Chunked Extension Quoted-String Parsing",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2026-2332",
+      "fixCommitUrl" : "",
+      "published" : "2026-04-14T23:40:31Z",
+      "modified" : "2026-08-14T18:45:12.918975427Z"
+    }, {
+      "id" : "GHSA-HMR7-M48G-48F6",
+      "severity" : "MEDIUM",
+      "cvss" : {
+        "score" : 5.3,
+        "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N"
+      },
+      "epss" : {
+        "score" : 0.01069,
+        "percentile" : 0.61815
+      },
+      "cwes" : [ "CWE-130" ],
+      "aliases" : [ "CVE-2023-40167" ],
+      "summary" : "Jetty accepts \"+\" prefixed value in Content-Length",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2023-40167",
+      "fixCommitUrl" : "",
+      "published" : "2023-09-14T16:17:27Z",
+      "modified" : "2026-02-04T03:59:52.327364Z"
+    }, {
+      "id" : "GHSA-QH8G-58PP-2WXH",
+      "severity" : "MEDIUM",
+      "cvss" : {
+        "score" : 6.3,
+        "vector" : "CVSS:4.0/AV:N/AC:L/AT:P/PR:N/UI:N/VC:N/VI:L/VA:N/SC:N/SI:N/SA:N"
+      },
+      "epss" : {
+        "score" : 0.00965,
+        "percentile" : 0.58516
+      },
+      "cwes" : [ "CWE-1286" ],
+      "aliases" : [ "CVE-2024-6763" ],
+      "summary" : "Eclipse Jetty URI parsing of invalid authority",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2024-6763",
+      "fixCommitUrl" : "",
+      "published" : "2024-10-14T21:11:43Z",
+      "modified" : "2026-02-04T05:13:21.910792Z"
+    }, {
+      "id" : "GHSA-WJPW-4J6X-6RWH",
+      "severity" : "LOW",
+      "cvss" : {
+        "score" : 3.7,
+        "vector" : "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:L/A:N"
+      },
+      "epss" : {
+        "score" : 0.00159,
+        "percentile" : 0.05506
+      },
+      "cwes" : [ "CWE-20" ],
+      "aliases" : [ "CVE-2025-11143" ],
+      "summary" : "org.eclipse.jetty:jetty-http has different parsing of invalid URIs",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2025-11143",
+      "fixCommitUrl" : "",
+      "published" : "2026-03-05T21:41:25Z",
+      "modified" : "2026-03-09T11:29:07.402944Z"
+    } ],
+    "reachability" : {
+      "status" : "UNREACHABLE",
+      "reachableMethods" : [ ],
+      "reachable" : false
+    },
+    "compatibility" : {
+      "status" : "UNKNOWN",
+      "breakingChangeCount" : 0,
+      "breakingChangesByType" : { },
+      "topBreakingChanges" : [ ],
+      "contextuallyAdjusted" : false
+    },
+    "remediation" : {
+      "decision" : "DEFER",
+      "rationale" : "Deferred by optimiser: residual risk 0,37 within acceptable threshold given sprint budget.",
+      "riskReduction" : 0.0,
+      "effortCost" : 0.0,
+      "recommendedVersion" : "12.0.31"
+    },
+    "stabilitySummary" : "Current: TOOD=0 days, VersionLag=0, LatestVersion=9.4.51.v20230217 | Fix: no Goblin data"
+  }, {
+    "artifact" : "org.eclipse.jetty:jetty-xml:9.4.51.v20230217",
+    "vulnerabilities" : [ {
+      "id" : "GHSA-58QW-P7QM-5RVH",
+      "severity" : "LOW",
+      "cvss" : {
+        "score" : 3.9,
+        "vector" : "CVSS:3.1/AV:L/AC:H/PR:H/UI:N/S:U/C:L/I:L/A:L"
+      },
+      "epss" : null,
+      "cwes" : [ "CWE-611" ],
+      "aliases" : [ ],
+      "summary" : "Eclipse Jetty XmlParser allows arbitrary DOCTYPE declarations",
+      "advisoryUrl" : "https://github.com/eclipse/jetty.project/security/advisories/GHSA-58qw-p7qm-5rvh",
+      "fixCommitUrl" : "",
+      "published" : "2023-07-10T21:52:39Z",
+      "modified" : "2026-02-10T20:18:58.443015Z"
+    } ],
+    "reachability" : {
+      "status" : "UNREACHABLE",
+      "reachableMethods" : [ ],
+      "reachable" : false
+    },
+    "compatibility" : {
+      "status" : "UNKNOWN",
+      "breakingChangeCount" : 0,
+      "breakingChangesByType" : { },
+      "topBreakingChanges" : [ ],
+      "contextuallyAdjusted" : false
+    },
+    "remediation" : {
+      "decision" : "DEFER",
+      "rationale" : "Deferred by optimiser: residual risk 0,20 within acceptable threshold given sprint budget.",
+      "riskReduction" : 0.0,
+      "effortCost" : 0.0,
+      "recommendedVersion" : "9.4.52.v20230823"
+    },
+    "stabilitySummary" : "Current: TOOD=0 days, VersionLag=0, LatestVersion=9.4.51.v20230217 | Fix: no Goblin data"
+  }, {
+    "artifact" : "org.eclipse.jetty:jetty-security:9.4.51.v20230217",
+    "vulnerabilities" : [ {
+      "id" : "GHSA-2FVJ-HGJ9-J2GR",
+      "severity" : "HIGH",
+      "cvss" : {
+        "score" : 8.7,
+        "vector" : "CVSS:4.0/AV:N/AC:L/AT:N/PR:N/UI:N/VC:H/VI:N/VA:N/SC:N/SI:N/SA:N"
+      },
+      "epss" : {
+        "score" : 0.0047,
+        "percentile" : 0.38865
+      },
+      "cwes" : [ "CWE-173", "CWE-303" ],
+      "aliases" : [ "CVE-2026-10050" ],
+      "summary" : "Eclipse Jetty Digest Authentication: ISO-8859-1 lossy encoding allows authentication bypass via character substitution",
+      "advisoryUrl" : "https://github.com/jetty/jetty.project/security/advisories/GHSA-2fvj-hgj9-j2gr",
+      "fixCommitUrl" : "",
+      "published" : "2026-07-22T22:55:18Z",
+      "modified" : "2026-07-24T03:44:33.607998015Z"
+    } ],
+    "reachability" : {
+      "status" : "UNREACHABLE",
+      "reachableMethods" : [ ],
+      "reachable" : false
+    },
+    "compatibility" : {
+      "status" : "UNKNOWN",
+      "breakingChangeCount" : 0,
+      "breakingChangesByType" : { },
+      "topBreakingChanges" : [ ],
+      "contextuallyAdjusted" : false
+    },
+    "remediation" : {
+      "decision" : "RECOMMENDED",
+      "rationale" : "Optimal: maximises risk reduction within effort budget. Risk=0,44 | Effort=2,0 units (UNKNOWN) | StabilityScore=N/A.",
+      "riskReduction" : 0.43640999999999996,
+      "effortCost" : 2.0,
+      "recommendedVersion" : "9.4.63"
+    },
+    "stabilitySummary" : "Current: TOOD=0 days, VersionLag=0, LatestVersion=9.4.51.v20230217 | Fix: no Goblin data"
+  }, {
+    "artifact" : "org.jetbrains.kotlin:kotlin-stdlib:1.5.32",
+    "vulnerabilities" : [ {
+      "id" : "GHSA-2QP4-G3Q3-F92W",
+      "severity" : "MEDIUM",
+      "cvss" : {
+        "score" : 5.3,
+        "vector" : "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N"
+      },
+      "epss" : {
+        "score" : 0.02212,
+        "percentile" : 0.81067
+      },
+      "cwes" : [ "CWE-667", "CWE-829" ],
+      "aliases" : [ "CVE-2022-24329" ],
+      "summary" : "Improper Locking in JetBrains Kotlin",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2022-24329",
+      "fixCommitUrl" : "",
+      "published" : "2022-02-26T00:00:43Z",
+      "modified" : "2026-02-04T04:02:59.890926Z"
+    } ],
+    "reachability" : {
+      "status" : "UNREACHABLE",
+      "reachableMethods" : [ ],
+      "reachable" : false
+    },
+    "compatibility" : {
+      "status" : "UNKNOWN",
+      "breakingChangeCount" : 0,
+      "breakingChangesByType" : { },
+      "topBreakingChanges" : [ ],
+      "contextuallyAdjusted" : false
+    },
+    "remediation" : {
+      "decision" : "DEFER",
+      "rationale" : "Deferred by optimiser: residual risk 0,27 within acceptable threshold given sprint budget.",
+      "riskReduction" : 0.0,
+      "effortCost" : 0.0,
+      "recommendedVersion" : "1.6.0"
+    },
+    "stabilitySummary" : "Current: TOOD=0 days, VersionLag=0, LatestVersion=1.5.32 | Fix: no Goblin data"
+  }, {
+    "artifact" : "ch.qos.logback:logback-core:1.5.18",
+    "vulnerabilities" : [ {
+      "id" : "GHSA-25QH-J22F-PWP8",
+      "severity" : "MEDIUM",
+      "cvss" : {
+        "score" : 5.9,
+        "vector" : "CVSS:4.0/AV:L/AC:L/AT:P/PR:H/UI:P/VC:H/VI:L/VA:L/SC:H/SI:L/SA:L"
+      },
+      "epss" : {
+        "score" : 0.00181,
+        "percentile" : 0.07899
+      },
+      "cwes" : [ "CWE-20" ],
+      "aliases" : [ "CVE-2025-11226" ],
+      "summary" : "QOS.CH logback-core is vulnerable to Arbitrary Code Execution through file processing",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2025-11226",
+      "fixCommitUrl" : "",
+      "published" : "2025-10-01T09:30:24Z",
+      "modified" : "2026-02-04T04:36:33.093619Z"
+    }, {
+      "id" : "GHSA-JHQ6-GFMJ-V8FX",
+      "severity" : "LOW",
+      "cvss" : {
+        "score" : 2.9,
+        "vector" : "CVSS:4.0/AV:N/AC:H/AT:P/PR:N/UI:N/VC:L/VI:L/VA:N/SC:L/SI:L/SA:N/E:P/RE:M/U:Green"
+      },
+      "epss" : {
+        "score" : 0.0037,
+        "percentile" : 0.30272
+      },
+      "cwes" : [ "CWE-502" ],
+      "aliases" : [ "CVE-2026-10532" ],
+      "summary" : "Logback vulnerable to Object Injection through HardenedObjectInputStream modules",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2026-10532",
+      "fixCommitUrl" : "",
+      "published" : "2026-06-01T15:30:40Z",
+      "modified" : "2026-07-15T22:00:52.732394384Z"
+    }, {
+      "id" : "GHSA-P47F-322F-WHFH",
+      "severity" : "LOW",
+      "cvss" : {
+        "score" : 1.2,
+        "vector" : "CVSS:4.0/AV:L/AC:H/AT:P/PR:N/UI:N/VC:L/VI:L/VA:N/SC:L/SI:L/SA:N/E:P/RE:L/U:Green"
+      },
+      "epss" : {
+        "score" : 0.0037,
+        "percentile" : 0.3023
+      },
+      "cwes" : [ "CWE-502" ],
+      "aliases" : [ "CVE-2026-9828" ],
+      "summary" : "QOS.CH Sarl logback logback-core has a deserialization of untrusted data vulnerability",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2026-9828",
+      "fixCommitUrl" : "",
+      "published" : "2026-05-28T15:39:50Z",
+      "modified" : "2026-07-03T10:14:36.248327289Z"
+    }, {
+      "id" : "GHSA-QQPG-MVQG-649V",
+      "severity" : "LOW",
+      "cvss" : {
+        "score" : 1.8,
+        "vector" : "CVSS:4.0/AV:L/AC:H/AT:P/PR:H/UI:N/VC:L/VI:L/VA:L/SC:L/SI:L/SA:L"
+      },
+      "epss" : {
+        "score" : 0.00151,
+        "percentile" : 0.04765
+      },
+      "cwes" : [ "CWE-20" ],
+      "aliases" : [ "CVE-2026-1225" ],
+      "summary" : "Logback allows an attacker to instantiate classes already present on the class path",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2026-1225",
+      "fixCommitUrl" : "",
+      "published" : "2026-01-22T12:31:22Z",
+      "modified" : "2026-02-04T04:14:42.648926Z"
+    } ],
+    "reachability" : {
+      "status" : "UNREACHABLE",
+      "reachableMethods" : [ ],
+      "reachable" : false
+    },
+    "compatibility" : {
+      "status" : "UNKNOWN",
+      "breakingChangeCount" : 0,
+      "breakingChangesByType" : { },
+      "topBreakingChanges" : [ ],
+      "contextuallyAdjusted" : false
+    },
+    "remediation" : {
+      "decision" : "DEFER",
+      "rationale" : "Deferred by optimiser: residual risk 0,30 within acceptable threshold given sprint budget.",
+      "riskReduction" : 0.0,
+      "effortCost" : 0.0,
+      "recommendedVersion" : "1.5.34"
+    },
+    "stabilitySummary" : "Current: TOOD=0 days, VersionLag=0, LatestVersion=1.5.18 | Fix: no Goblin data"
+  }, {
+    "artifact" : "tools.jackson.core:jackson-databind:3.1.4",
+    "vulnerabilities" : [ {
+      "id" : "GHSA-5GVW-P9QM-JGWH",
+      "severity" : "MEDIUM",
+      "cvss" : {
+        "score" : 6.5,
+        "vector" : "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:N"
+      },
+      "epss" : {
+        "score" : 0.00346,
+        "percentile" : 0.2778
+      },
+      "cwes" : [ "CWE-863" ],
+      "aliases" : [ "CVE-2026-59889" ],
+      "summary" : "jackson-databind: @JsonView bypassed for @JsonUnwrapped container properties on deserialization",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2026-59889",
+      "fixCommitUrl" : "",
+      "published" : "2026-07-21T22:00:43Z",
+      "modified" : "2026-08-03T21:00:23.035506112Z"
+    } ],
+    "reachability" : {
+      "status" : "UNREACHABLE",
+      "reachableMethods" : [ ],
+      "reachable" : false
+    },
+    "compatibility" : {
+      "status" : "UNKNOWN",
+      "breakingChangeCount" : 0,
+      "breakingChangesByType" : { },
+      "topBreakingChanges" : [ ],
+      "contextuallyAdjusted" : false
+    },
+    "remediation" : {
+      "decision" : "DEFER",
+      "rationale" : "Deferred by optimiser: residual risk 0,33 within acceptable threshold given sprint budget.",
+      "riskReduction" : 0.0,
+      "effortCost" : 0.0,
+      "recommendedVersion" : "2.18.9"
+    },
+    "stabilitySummary" : "Current: TOOD=0 days, VersionLag=0, LatestVersion=3.1.4 | Fix: no Goblin data"
+  }, {
+    "artifact" : "io.netty:netty-resolver-dns:4.2.13.Final",
+    "vulnerabilities" : [ {
+      "id" : "GHSA-5PVG-856G-CP85",
+      "severity" : "HIGH",
+      "cvss" : {
+        "score" : 8.7,
+        "vector" : "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:N"
+      },
+      "epss" : {
+        "score" : 0.00318,
+        "percentile" : 0.24656
+      },
+      "cwes" : [ "CWE-345", "CWE-346" ],
+      "aliases" : [ "CVE-2026-47691" ],
+      "summary" : "Netty has Insufficient Bailiwick Validation for NS Records",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2026-47691",
+      "fixCommitUrl" : "",
+      "published" : "2026-06-08T23:02:48Z",
+      "modified" : "2026-08-20T15:47:55.244478861Z"
+    }, {
+      "id" : "GHSA-676X-F7GG-47VC",
+      "severity" : "HIGH",
+      "cvss" : {
+        "score" : 8.7,
+        "vector" : "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:H/I:H/A:N"
+      },
+      "epss" : {
+        "score" : 0.00248,
+        "percentile" : 0.16456
+      },
+      "cwes" : [ "CWE-345", "CWE-346" ],
+      "aliases" : [ "CVE-2026-45674" ],
+      "summary" : "Netty Vulnerable to DNS Cache Poisoning via Missing Bailiwick Checks in CNAME Records",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2026-45674",
+      "fixCommitUrl" : "",
+      "published" : "2026-06-08T23:02:26Z",
+      "modified" : "2026-08-20T15:47:55.099803188Z"
+    }, {
+      "id" : "GHSA-XMV7-R254-6Q78",
+      "severity" : "MEDIUM",
+      "cvss" : {
+        "score" : 6.8,
+        "vector" : "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:C/C:N/I:H/A:N"
+      },
+      "epss" : {
+        "score" : 0.00256,
+        "percentile" : 0.17446
+      },
+      "cwes" : [ "CWE-330", "CWE-340" ],
+      "aliases" : [ "CVE-2026-45673" ],
+      "summary" : "Netty: DNS Cache Poisoning due to Predictable PRNG and Default Static Source Port",
+      "advisoryUrl" : "https://nvd.nist.gov/vuln/detail/CVE-2026-45673",
+      "fixCommitUrl" : "",
+      "published" : "2026-06-08T23:02:05Z",
+      "modified" : "2026-06-12T19:45:12.897371843Z"
+    } ],
+    "reachability" : {
+      "status" : "UNREACHABLE",
+      "reachableMethods" : [ ],
+      "reachable" : false
+    },
+    "compatibility" : {
+      "status" : "UNKNOWN",
+      "breakingChangeCount" : 0,
+      "breakingChangesByType" : { },
+      "topBreakingChanges" : [ ],
+      "contextuallyAdjusted" : false
+    },
+    "remediation" : {
+      "decision" : "RECOMMENDED",
+      "rationale" : "Optimal: maximises risk reduction within effort budget. Risk=0,44 | Effort=2,0 units (UNKNOWN) | StabilityScore=N/A.",
+      "riskReduction" : 0.435954,
+      "effortCost" : 2.0,
+      "recommendedVersion" : "4.1.135.Final"
+    },
+    "stabilitySummary" : "Current: TOOD=0 days, VersionLag=0, LatestVersion=4.2.13.Final | Fix: no Goblin data"
+  } ],
+  "globalGraphValidation" : {
+    "status" : "UNAVAILABLE",
+    "analyzedArtifacts" : [ ],
+    "newVulnerableDeps" : [ ]
+  },
+  "vulnerabilityLookupFailures" : [ ]
+}

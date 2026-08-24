@@ -20,20 +20,8 @@
     </dependency>
 
     <dependency>
-      <groupId>org.soot-oss</groupId>
-      <artifactId>sootup.core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.soot-oss</groupId>
-      <artifactId>sootup.java.core</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.soot-oss</groupId>
-      <artifactId>sootup.java.bytecode.frontend</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.soot-oss</groupId>
-      <artifactId>sootup.callgraph</artifactId>
+      <groupId>com.ibm.wala</groupId>
+      <artifactId>com.ibm.wala.core</artifactId>
     </dependency>
 
     <dependency>

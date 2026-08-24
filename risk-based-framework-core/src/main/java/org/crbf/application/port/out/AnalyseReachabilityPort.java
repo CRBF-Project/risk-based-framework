@@ -16,7 +16,7 @@ public interface AnalyseReachabilityPort {
      * per-artifact loop, and pass the result to {@link #analyseReachability}.
      *
      * Returns {@link ProjectCallGraph#empty()} if the analysis cannot be performed
-     * (missing classes, SootUp failure, etc.).
+     * (missing classes, WALA failure, etc.).
      *
      * @param classesPath Path to the project's compiled bytecode ({@code target/classes/}).
      * @param allProjectJars All JAR paths in the dependency graph.

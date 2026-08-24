@@ -28,7 +28,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <z3.version>4.13.0</z3.version>
-        <sootup.version>2.0.0</sootup.version>
+        <wala.version>1.6.10</wala.version>
         <japicmp.version>0.23.0</japicmp.version>
         <jackson.version>2.16.1</jackson.version>
         <commons-lang3.version>3.14.0</commons-lang3.version>
@@ -52,24 +52,9 @@
             </dependency>
 
             <dependency>
-                <groupId>org.soot-oss</groupId>
-                <artifactId>sootup.core</artifactId>
-                <version>${sootup.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.soot-oss</groupId>
-                <artifactId>sootup.java.core</artifactId>
-                <version>${sootup.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.soot-oss</groupId>
-                <artifactId>sootup.java.bytecode.frontend</artifactId>
-                <version>${sootup.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.soot-oss</groupId>
-                <artifactId>sootup.callgraph</artifactId>
-                <version>${sootup.version}</version>
+                <groupId>com.ibm.wala</groupId>
+                <artifactId>com.ibm.wala.core</artifactId>
+                <version>${wala.version}</version>
             </dependency>
 
             <dependency>

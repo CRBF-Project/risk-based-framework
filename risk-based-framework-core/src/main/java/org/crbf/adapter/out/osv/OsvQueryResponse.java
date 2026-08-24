@@ -28,7 +28,14 @@ record OsvQueryResponse(List<OsvVulnerabilityDto> vulns) {
 
         @JsonIgnoreProperties(ignoreUnknown = true)
         record OsvAffectedDto(
+                        @JsonProperty("package") OsvPackageDto pkg,
                         List<OsvRangeDto> ranges) {
+        }
+
+        @JsonIgnoreProperties(ignoreUnknown = true)
+        record OsvPackageDto(
+                        String ecosystem,
+                        String name) {
         }
 
         @JsonIgnoreProperties(ignoreUnknown = true)

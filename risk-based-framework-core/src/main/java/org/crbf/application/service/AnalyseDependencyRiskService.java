@@ -175,6 +175,7 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                         return Optional.of(new RemediationCandidate(locatedArtifact.artifact(),
                                         vulnerabilities, reachability, reachabilityResults,
                                         contextualReport, Optional.of(validation.proposedVersion()),
+                                        Optional.empty(),
                                         currentStability, fixStability, Optional.of(validation)));
                 }
 
@@ -182,6 +183,7 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                                 locatedArtifact.artifact(), vulnerabilities, reachability,
                                 reachabilityResults,
                                 Optional.empty(), vulnerableArtifact.requiredFixVersion().map(Version::value),
+                                vulnerableArtifact.requiredAlternativeFix(),
                                 currentStability, Optional.empty(), Optional.empty()));
         }
 
@@ -213,12 +215,14 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                                         artifact, enrichedVulns, ReachabilityStatus.UNKNOWN, List.of(),
                                         validation.compatibilityReport(),
                                         Optional.of(validation.proposedVersion()),
+                                        Optional.empty(),
                                         currentStability, fixStability, Optional.of(validation)));
                 }
 
                 return Optional.of(new RemediationCandidate(
                                 artifact, enrichedVulns, ReachabilityStatus.UNKNOWN, List.of(),
                                 Optional.empty(), Optional.empty(),
+                                vulnerableArtifact.requiredAlternativeFix(),
                                 currentStability, Optional.empty(), Optional.empty()));
         }
 

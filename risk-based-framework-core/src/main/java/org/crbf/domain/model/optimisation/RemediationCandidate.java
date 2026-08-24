@@ -8,6 +8,7 @@ import org.crbf.domain.model.reachability.VulnerabilityReachability;
 import org.crbf.domain.model.stability.EcosystemStability;
 import org.crbf.domain.model.stability.PfetDays;
 import org.crbf.domain.model.stability.StabilityScore;
+import org.crbf.domain.model.vulnerability.AlternativeFix;
 import org.crbf.domain.model.vulnerability.Severity;
 import org.crbf.domain.model.vulnerability.Vulnerability;
 
@@ -27,11 +28,15 @@ import java.util.Optional;
  * @param artifact            The artifact under analysis.
  * @param vulnerabilities     All known CVEs affecting this artifact version.
  * @param reachabilityStatus  Whether the artifact's classes are reachable
- *                            from the project's call graph (SootUp/CHA result).
+ *                            from the project's call graph (WALA/0-CFA result).
  * @param compatibilityReport API compatibility of the candidate fix version,
  *                            or {@code Optional.empty()} if no fix exists,
  *                            the JAR was unavailable, or analysis failed.
  * @param fixVersion          The earliest known safe version, or {@code null}.
+ * @param alternativeFix      A fix under a different Maven coordinate (e.g.
+ *                            the library was renamed), only populated when
+ *                            {@code fixVersion} is empty. Requires manual
+ *                            migration — never surfaced as a plain upgrade.
  * @param currentStability    Goblin metrics for the current artifact version.
  * @param fixVersionStability Goblin metrics for the proposed fix version.
  */
@@ -42,6 +47,7 @@ public record RemediationCandidate(
         List<VulnerabilityReachability> reachabilityReports,
         Optional<CompatibilityReport> compatibilityReport,
         Optional<String> fixVersion,
+        Optional<AlternativeFix> alternativeFix,
         Optional<EcosystemStability> currentStability,
         Optional<EcosystemStability> fixVersionStability,
         Optional<UpgradePathValidation> upgradePathValidation) {
@@ -63,6 +69,7 @@ public record RemediationCandidate(
         vulnerabilities = vulnerabilities == null ? List.of() : List.copyOf(vulnerabilities);
         reachabilityReports = reachabilityReports == null ? List.of() : List.copyOf(reachabilityReports);
         compatibilityReport = compatibilityReport == null ? Optional.empty() : compatibilityReport;
+        alternativeFix = alternativeFix == null ? Optional.empty() : alternativeFix;
         currentStability = currentStability == null ? Optional.empty() : currentStability;
         fixVersionStability = fixVersionStability == null ? Optional.empty() : fixVersionStability;
         upgradePathValidation = upgradePathValidation == null ? Optional.empty() : upgradePathValidation;
@@ -78,15 +85,25 @@ public record RemediationCandidate(
             ReachabilityStatus reachabilityStatus,
             List<VulnerabilityReachability> reachabilityReports,
             Optional<CompatibilityReport> compatibilityReport,
-            Optional<String> fixVersion) {
+            Optional<String> fixVersion,
+            Optional<AlternativeFix> alternativeFix) {
         return new RemediationCandidate(
                 artifact, vulnerabilities, reachabilityStatus, reachabilityReports,
-                compatibilityReport, fixVersion,
+                compatibilityReport, fixVersion, alternativeFix,
                 Optional.empty(), Optional.empty(), Optional.empty());
     }
 
     public boolean hasFixAvailable() {
         return fixVersion != null && fixVersion.isPresent();
+    }
+
+    /**
+     * A fix exists, but under a different Maven coordinate — requires
+     * manual migration, not an automatic version bump. Only meaningful
+     * alongside {@code !hasFixAvailable()}.
+     */
+    public boolean hasAlternativeFix() {
+        return alternativeFix != null && alternativeFix.isPresent();
     }
 
     /**
@@ -122,7 +139,7 @@ public record RemediationCandidate(
                 .flatMap(v -> v.epss().stream())
                 .mapToDouble(epss -> epss.value())
                 .max()
-                .orElse(0.5);
+                .orElse(0.0);
 
         // 0.5 is the neutral assumption when Goblin data is unavailable
         double stalenessUrgency = currentStability

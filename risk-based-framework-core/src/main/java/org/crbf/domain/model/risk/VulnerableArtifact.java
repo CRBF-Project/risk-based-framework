@@ -2,6 +2,7 @@ package org.crbf.domain.model.risk;
 
 import org.crbf.domain.model.artifact.Artifact;
 import org.crbf.domain.model.artifact.Version;
+import org.crbf.domain.model.vulnerability.AlternativeFix;
 import org.crbf.domain.model.vulnerability.Severity;
 import org.crbf.domain.model.vulnerability.Vulnerability;
 
@@ -39,6 +40,22 @@ public record VulnerableArtifact(
         return vulnerabilities.stream()
                 .flatMap(v -> v.minimumFixVersion().stream())
                 .max(Comparator.naturalOrder());
+    }
+
+    /**
+     * When no CVE affecting this artifact carries a fix version of its own,
+     * looks for a fix that exists under a different Maven coordinate — e.g.
+     * the library was renamed/forked. Only meaningful alongside
+     * {@code !hasFixAvailable()}: if a direct fix exists, that is always the
+     * simpler and preferred remediation path.
+     */
+    public Optional<AlternativeFix> requiredAlternativeFix() {
+        if (hasFixAvailable()) {
+            return Optional.empty();
+        }
+        return vulnerabilities.stream()
+                .flatMap(v -> v.alternativeFix().stream())
+                .findFirst();
     }
 
     /**
