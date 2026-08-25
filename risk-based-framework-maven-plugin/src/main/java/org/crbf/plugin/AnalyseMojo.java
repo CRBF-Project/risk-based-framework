@@ -37,7 +37,6 @@ import org.crbf.application.service.AnalyseDependencyRiskService;
 import org.crbf.application.service.RiskReportAssembler;
 import org.crbf.domain.model.artifact.Artifact;
 import org.crbf.domain.model.artifact.DependencyPath;
-import org.crbf.plugin.adapter.out.MavenDependencyGraphResolver;
 import org.crbf.plugin.adapter.out.MavenRuntimeArtifactResolverAdapter;
 
 /**

@@ -15,6 +15,17 @@ public record DependencyPath(List<Artifact> path) {
         return path.get(0);
     }
 
+    /**
+     * Every artifact in the path except the root — the actual dependency
+     * lineage a consumer cares about. Replaces the positional
+     * {@code path().stream().skip(1)} some callers used to rely on, which
+     * only worked because {@code root()} is always at index 0 by convention
+     * of how paths are built, not because the type declared it.
+     */
+    public List<Artifact> dependencies() {
+        return path.subList(1, path.size());
+    }
+
     public Artifact target() {
         return path.get(path.size() - 1);
     }

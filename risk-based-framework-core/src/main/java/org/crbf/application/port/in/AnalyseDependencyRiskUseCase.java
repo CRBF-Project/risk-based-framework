@@ -13,8 +13,8 @@ public interface AnalyseDependencyRiskUseCase {
      *                    (e.g. {@code target/classes} for Maven.
      *                    Provided by the caller so the service remains
      *                    agnostic of the build tool.
-     * @param prebuiltGraph Dependency paths resolved by the build tool.
+     * @param dependencyGraph Dependency paths resolved by the build tool.
      */
-    void analyse(Path projectPath, Path classesPath, List<DependencyPath> prebuiltGraph);
+    void analyse(Path projectPath, Path classesPath, List<DependencyPath> dependencyGraph);
 
 }

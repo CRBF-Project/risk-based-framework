@@ -1,14 +1,14 @@
-package org.crbf.plugin.adapter.out;
+package org.crbf.plugin;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.maven.shared.dependency.graph.DependencyNode;
+import org.crbf.domain.model.artifact.Artifact;
 import org.crbf.domain.model.artifact.DependencyPath;
 import org.crbf.domain.model.artifact.Scope;
 import org.junit.Test;
@@ -17,7 +17,7 @@ import org.junit.Test;
  * Unit tests for FR1's extraction logic (Tier 1 of the FR1 acceptance
  * criteria).
  * <p>
- * These tests exercise only {@link MavenDependencyGraphResolver#traverseAllPaths}
+ * These tests exercise only {@link MavenDependencyGraphResolver#flatten}
  * and {@link MavenDependencyGraphResolver#toArtifact} against mocked
  * {@link DependencyNode} trees. They verify that <b>our</b> flattening and
  * mapping code is correct — not that Maven's own dependency resolution
@@ -35,60 +35,63 @@ public class MavenDependencyGraphResolverTest {
         DependencyNode a = node("a", "compile", b);
         DependencyNode root = node("root", "compile", a);
 
-        List<DependencyPath> paths = traverse(root);
+        List<DependencyPath> paths = MavenDependencyGraphResolver.flatten(root);
 
-        assertEquals(2, paths.size());
-        assertEquals("org.example:root:1.0 -> org.example:a:1.0", paths.get(0).toString());
-        assertEquals("org.example:root:1.0 -> org.example:a:1.0 -> org.example:b:1.0", paths.get(1).toString());
+        // Structural equality (DependencyPath is a record) rather than
+        // string-matching toString() output: this must fail only if the
+        // extracted lineage is wrong, never because someone reformatted how
+        // a path prints. Comparing the whole list also makes the size (2)
+        // implicit instead of a bare literal.
+        assertEquals(
+                List.of(
+                        new DependencyPath(List.of(artifact("root"), artifact("a"))),
+                        new DependencyPath(List.of(artifact("root"), artifact("a"), artifact("b")))),
+                paths);
     }
 
     @Test
     public void branchingTree_pathsDoNotLeakBetweenSiblings() {
-        // root
-        // |- a
-        // |   `- c
-        // `- b
         DependencyNode c = node("c", "compile");
         DependencyNode a = node("a", "compile", c);
         DependencyNode b = node("b", "compile");
         DependencyNode root = node("root", "compile", a, b);
 
-        List<DependencyPath> paths = traverse(root);
+        List<DependencyPath> paths = MavenDependencyGraphResolver.flatten(root);
 
-        assertEquals(3, paths.size());
-        assertEquals("org.example:root:1.0 -> org.example:a:1.0", paths.get(0).toString());
-        assertEquals("org.example:root:1.0 -> org.example:a:1.0 -> org.example:c:1.0", paths.get(1).toString());
-        assertEquals("org.example:root:1.0 -> org.example:b:1.0", paths.get(2).toString());
-
-        // b's path must not carry over a's descendant (c). This guards the
+        // b's path must not carry over a's descendant (c) — this guards the
         // defensive `new ArrayList<>(currentPath)` copy in traverseAllPaths
         // against a future change that reintroduces shared mutable state
-        // between sibling branches.
-        assertTrue(paths.get(2).path().stream()
-                .noneMatch(artifact -> artifact.artifactId().value().equals("c")));
+        // between sibling branches. Asserting the full expected list proves
+        // this on its own: if c leaked into b's path, this equality fails.
+        assertEquals(
+                List.of(
+                        new DependencyPath(List.of(artifact("root"), artifact("a"))),
+                        new DependencyPath(List.of(artifact("root"), artifact("a"), artifact("c"))),
+                        new DependencyPath(List.of(artifact("root"), artifact("b")))),
+                paths);
     }
 
     @Test
     public void rootWithNoChildren_producesNoPaths() {
         DependencyNode root = node("root", "compile");
 
-        assertTrue(traverse(root).isEmpty());
+        assertTrue(MavenDependencyGraphResolver.flatten(root).isEmpty());
     }
 
     @Test
     public void toArtifact_preservesEveryDeclaredScope() {
-        assertEquals(Scope.COMPILE, scopeOf("compile"));
-        assertEquals(Scope.TEST, scopeOf("TEST"));
-        assertEquals(Scope.PROVIDED, scopeOf("provided"));
-        assertEquals(Scope.RUNTIME, scopeOf("runtime"));
-        assertEquals(Scope.SYSTEM, scopeOf("system"));
+        assertEquals("'compile' scope", Scope.COMPILE, scopeOf("compile"));
+        assertEquals("'TEST' scope (case-insensitive)", Scope.TEST, scopeOf("TEST"));
+        assertEquals("'provided' scope", Scope.PROVIDED, scopeOf("provided"));
+        assertEquals("'runtime' scope", Scope.RUNTIME, scopeOf("runtime"));
+        assertEquals("'system' scope", Scope.SYSTEM, scopeOf("system"));
     }
 
     @Test
     public void toArtifact_defaultsMissingScopeToCompile() {
-        assertEquals(Scope.COMPILE, scopeOf(null));
-        assertEquals(Scope.COMPILE, scopeOf(""));
-        assertEquals(Scope.COMPILE, scopeOf("   "));
+        assertEquals("null scope", Scope.COMPILE, scopeOf(null));
+        assertEquals("empty-string scope", Scope.COMPILE, scopeOf(""));
+        assertEquals("blank (whitespace-only) scope", Scope.COMPILE, scopeOf("   "));
     }
 
     @Test
@@ -124,6 +127,11 @@ public class MavenDependencyGraphResolverTest {
         return dependencyNode;
     }
 
+    /** The {@link Artifact} a {@code node(artifactId, "compile", ...)} maps to. */
+    private static Artifact artifact(String artifactId) {
+        return Artifact.create("org.example", artifactId, "1.0", Scope.COMPILE);
+    }
+
     private static Scope scopeOf(String rawScope) {
         org.apache.maven.artifact.Artifact mvnArtifact = mock(org.apache.maven.artifact.Artifact.class);
         when(mvnArtifact.getGroupId()).thenReturn("org.example");
@@ -131,11 +139,5 @@ public class MavenDependencyGraphResolverTest {
         when(mvnArtifact.getVersion()).thenReturn("1.0");
         when(mvnArtifact.getScope()).thenReturn(rawScope);
         return MavenDependencyGraphResolver.toArtifact(mvnArtifact).scope();
-    }
-
-    private static List<DependencyPath> traverse(DependencyNode root) {
-        List<DependencyPath> paths = new ArrayList<>();
-        MavenDependencyGraphResolver.traverseAllPaths(root, new ArrayList<>(), paths);
-        return paths;
     }
 }
