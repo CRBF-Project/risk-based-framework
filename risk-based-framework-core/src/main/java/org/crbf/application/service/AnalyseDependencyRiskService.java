@@ -88,8 +88,8 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
         }
 
         @Override
-        public void analyse(Path projectPath, Path classesPath, List<DependencyPath> prebuiltGraph) {
-                Set<Artifact> uniqueArtifacts = extractUniqueArtifacts(prebuiltGraph);
+        public void analyse(Path projectPath, Path classesPath, List<DependencyPath> dependencyGraph) {
+                Set<Artifact> uniqueArtifacts = extractUniqueArtifacts(dependencyGraph);
                 logger.logGraphResolved(uniqueArtifacts.size());
 
                 Map<Artifact, LocatedArtifact> resolvedArtifacts = resolveAllArtifacts(uniqueArtifacts);
@@ -130,7 +130,7 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                 plan = plan.withGlobalValidation(validateGlobalGraph(plan));
                 logger.logRemediationPlan(plan);
 
-                RiskReport report = reportAssembler.assemble(projectPath, prebuiltGraph,
+                RiskReport report = reportAssembler.assemble(projectPath, dependencyGraph,
                                 uniqueArtifacts, candidates, plan, lookupFailures);
                 exportRiskReportPort.exportReport(report, projectPath.resolve("target"));
 
@@ -175,6 +175,7 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                         return Optional.of(new RemediationCandidate(locatedArtifact.artifact(),
                                         vulnerabilities, reachability, reachabilityResults,
                                         contextualReport, Optional.of(validation.proposedVersion()),
+                                        Optional.empty(),
                                         currentStability, fixStability, Optional.of(validation)));
                 }
 
@@ -182,6 +183,7 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                                 locatedArtifact.artifact(), vulnerabilities, reachability,
                                 reachabilityResults,
                                 Optional.empty(), vulnerableArtifact.requiredFixVersion().map(Version::value),
+                                vulnerableArtifact.requiredAlternativeFix(),
                                 currentStability, Optional.empty(), Optional.empty()));
         }
 
@@ -213,12 +215,14 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                                         artifact, enrichedVulns, ReachabilityStatus.UNKNOWN, List.of(),
                                         validation.compatibilityReport(),
                                         Optional.of(validation.proposedVersion()),
+                                        Optional.empty(),
                                         currentStability, fixStability, Optional.of(validation)));
                 }
 
                 return Optional.of(new RemediationCandidate(
                                 artifact, enrichedVulns, ReachabilityStatus.UNKNOWN, List.of(),
                                 Optional.empty(), Optional.empty(),
+                                vulnerableArtifact.requiredAlternativeFix(),
                                 currentStability, Optional.empty(), Optional.empty()));
         }
 
@@ -280,7 +284,7 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
 
         private Set<Artifact> extractUniqueArtifacts(List<DependencyPath> dependencyGraph) {
                 return dependencyGraph.stream()
-                                .flatMap(p -> p.path().stream().skip(1))
+                                .flatMap(p -> p.dependencies().stream())
                                 .filter(a -> a.scope().isAnalysable())
                                 .collect(Collectors.toCollection(LinkedHashSet::new));
         }

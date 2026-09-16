@@ -2,7 +2,6 @@ package org.crbf.plugin;
 
 import java.io.File;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,7 +19,6 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.ProjectBuildingRequest;
 import org.apache.maven.shared.dependency.graph.DependencyGraphBuilder;
 import org.apache.maven.shared.dependency.graph.DependencyGraphBuilderException;
-import org.apache.maven.shared.dependency.graph.DependencyNode;
 
 import org.crbf.adapter.out.goblin.GoblinWeaverGraphAdapter;
 import org.crbf.domain.model.optimisation.RiskWeights;
@@ -32,14 +30,13 @@ import org.crbf.adapter.out.export.ReportGeneratorAdapter;
 import org.crbf.adapter.out.goblin.GoblinWeaverStabilityAdapter;
 import org.crbf.adapter.out.japicmp.JapicmpCompatibilityAdapter;
 import org.crbf.adapter.out.osv.OsvVulnerabilityAdapter;
-import org.crbf.adapter.out.soot.SootUpReachabilityAdapter;
+import org.crbf.adapter.out.wala.WalaReachabilityAdapter;
 import org.crbf.adapter.out.z3.Z3RemediationAdapter;
 import org.crbf.application.port.in.AnalyseDependencyRiskUseCase;
 import org.crbf.application.service.AnalyseDependencyRiskService;
 import org.crbf.application.service.RiskReportAssembler;
 import org.crbf.domain.model.artifact.Artifact;
 import org.crbf.domain.model.artifact.DependencyPath;
-import org.crbf.domain.model.artifact.Scope;
 import org.crbf.plugin.adapter.out.MavenRuntimeArtifactResolverAdapter;
 
 /**
@@ -83,6 +80,35 @@ public class AnalyseMojo extends AbstractMojo {
     private double effortBudget;
 
     /**
+     * Maximum time (in seconds) allowed for WALA's 0-CFA call graph
+     * construction. WALA's propagation-based analysis has no built-in time
+     * bound, so a large or reflection-heavy dependency graph could otherwise
+     * run indefinitely. On timeout, the analysis is abandoned and reachability
+     * degrades gracefully to UNKNOWN for every vulnerability, never producing
+     * false negatives.
+     */
+    @Parameter(property = "contextframework.callGraphTimeoutSeconds", defaultValue = "600")
+    private int callGraphTimeoutSeconds;
+
+    /**
+     * Semicolon-separated regular expressions (JVM-internal slash notation,
+     * e.g. {@code java/awt/.*}) identifying classes to exclude from WALA's
+     * class-hierarchy construction entirely. Applies to every loader — JDK,
+     * dependencies and application code alike — so it should only list
+     * packages no real Maven dependency would ever occupy (JDK-internal/GUI
+     * toolkit code). The default follows the same design as Eclipse Steady's
+     * {@code vulas.reach.wala.callgraph.exclusions}, minus one entry
+     * ({@code org/apache/xerces/.*}) that would otherwise make a real,
+     * independently-distributed dependency (the standalone Xerces artifact)
+     * invisible to reachability analysis.
+     */
+    @Parameter(property = "contextframework.callGraphExclusions", defaultValue = ""
+            + "java/awt/.*;javax/swing/.*;sun/awt/.*;sun/swing/.*;com/sun/.*;sun/.*;"
+            + "org/netbeans/.*;org/openide/.*;com/ibm/crypto/.*;com/ibm/security/.*;"
+            + "dalvik/.*;java/io/ObjectStreamClass*;apple/.*;com/apple/.*;com/oracle/.*;jdk/.*;org/omg/.*;org/w3c/.*")
+    private String callGraphExclusions;
+
+    /**
      * OSV API endpoint for vulnerability lookups.
      */
     @Parameter(property = "contextframework.osvApiUrl", defaultValue = "https://api.osv.dev/v1/query")
@@ -98,7 +124,7 @@ public class AnalyseMojo extends AbstractMojo {
      * The Aether Repository System entry point.
      * Used by the PluginArtifactResolverAdapter to physically download missing
      * artifact files (.jar) from remote repositories, which is strictly required
-     * for SootUp's bytecode analysis.
+     * for WALA's bytecode analysis.
      */
     @Component
     private RepositorySystem repoSystem;
@@ -166,6 +192,7 @@ public class AnalyseMojo extends AbstractMojo {
         getLog().info("=========================================================");
         getLog().info("Target Project : " + mavenProject.getArtifactId() + ":" + mavenProject.getVersion());
         getLog().info("Effort Budget  : " + effortBudget + " units");
+        getLog().info("CG Timeout     : " + callGraphTimeoutSeconds + "s");
         getLog().info("---------------------------------------------------------");
 
         validatePreconditions();
@@ -204,7 +231,7 @@ public class AnalyseMojo extends AbstractMojo {
      * Validates the execution environment and configuration parameters before
      * starting the analysis.
      * <p>
-     * <b>Compilation Check:</b> SootUp requires compiled bytecode to build the call
+     * <b>Compilation Check:</b> WALA requires compiled bytecode to build the call
      * graph.
      * If the project's output directory is missing, the plugin gracefully degrades
      * its behavior,
@@ -282,22 +309,25 @@ public class AnalyseMojo extends AbstractMojo {
                 new OsvVulnerabilityAdapter(osvApiUrl),
                 new EpssAdapter(),
                 new GoblinWeaverStabilityAdapter(goblinUrl),
-                new SootUpReachabilityAdapter(),
+                new WalaReachabilityAdapter(callGraphTimeoutSeconds, callGraphExclusions),
                 new JapicmpCompatibilityAdapter(),
                 new GoblinWeaverGraphAdapter(goblinUrl),
                 new Z3RemediationAdapter(effortBudget, weights),
-                new RiskReportAssembler(),
+                new RiskReportAssembler(weights),
                 new ReportGeneratorAdapter());
     }
 
     /**
-     * Builds the full dependency graph using Maven's DependencyGraphBuilder.
+     * Builds the full dependency graph using Maven's DependencyGraphBuilder,
+     * delegating the actual graph resolution and flattening to
+     * {@link MavenDependencyGraphResolver} (kept independently testable from
+     * this Mojo — see {@code MavenDependencyGraphResolverTest}).
      *
      * @return the list of dependency paths extracted from the graph, where
      *         each path is a sequence of artifacts from the root project to a leaf
      *         dependency.
-     * @throws DependencyGraphBuilderException if some of the dependencies could not
-     *                                         be resolved.
+     * @throws MojoExecutionException if some of the dependencies could not be
+     *                                resolved.
      */
     private List<DependencyPath> buildDependencyGraph() throws MojoExecutionException {
         try {
@@ -305,52 +335,10 @@ public class AnalyseMojo extends AbstractMojo {
                     mavenSession.getProjectBuildingRequest());
             buildingRequest.setProject(mavenProject);
 
-            DependencyNode rootNode = dependencyGraphBuilder.buildDependencyGraph(buildingRequest, null);
-
-            List<DependencyPath> paths = new ArrayList<>();
-            traverseAllPaths(rootNode, new ArrayList<>(), paths);
-
-            return paths;
+            return new MavenDependencyGraphResolver(dependencyGraphBuilder).resolve(buildingRequest);
 
         } catch (DependencyGraphBuilderException e) {
             throw new MojoExecutionException("Failed to build dependency graph", e);
         }
-    }
-
-    /**
-     * Traverses the dependency tree generated by Maven using a recursive
-     * Depth-First Search (DFS) algorithm to extract complete resolution paths.
-     *
-     * @param node The current node of the Maven dependency tree being
-     *             processed.
-     * @param currentPath The list of artifacts representing the path traversed from
-     *                    the root project to this node.
-     * @param allPaths The global accumulator collection where valid paths (with
-     *                 depth > 1) are registered.
-     */
-    private void traverseAllPaths(
-            DependencyNode node,
-            List<Artifact> currentPath,
-            List<DependencyPath> allPaths) {
-        if (node.getArtifact() != null) {
-            currentPath = new ArrayList<>(currentPath);
-            currentPath.add(toArtifact(node.getArtifact()));
-        }
-
-        if (currentPath.size() > 1) {
-            allPaths.add(new DependencyPath(new ArrayList<>(currentPath)));
-        }
-
-        for (DependencyNode child : node.getChildren()) {
-            traverseAllPaths(child, currentPath, allPaths);
-        }
-    }
-
-    private Artifact toArtifact(org.apache.maven.artifact.Artifact mvnArtifact) {
-        return Artifact.create(
-                mvnArtifact.getGroupId(),
-                mvnArtifact.getArtifactId(),
-                mvnArtifact.getVersion(),
-                Scope.fromString(mvnArtifact.getScope()));
     }
 }

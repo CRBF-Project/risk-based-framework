@@ -17,6 +17,7 @@ import org.crbf.application.model.report.GlobalGraphValidationSummary;
 import org.crbf.application.model.report.GraphValidationStatus;
 import org.crbf.application.model.report.ReachabilitySummary;
 import org.crbf.application.model.report.RemediationSummary;
+import org.crbf.application.model.report.ResidualRiskSummary;
 import org.crbf.application.model.report.RiskReport;
 import org.crbf.application.model.report.UpgradeDecision;
 import org.crbf.domain.model.artifact.Artifact;
@@ -27,9 +28,22 @@ import org.crbf.domain.model.optimisation.GlobalGraphValidation;
 import org.crbf.domain.model.optimisation.RemediationCandidate;
 import org.crbf.domain.model.optimisation.RemediationDecision;
 import org.crbf.domain.model.optimisation.RemediationPlan;
+import org.crbf.domain.model.optimisation.RiskWeights;
+import org.crbf.domain.model.vulnerability.AlternativeFix;
 import org.crbf.domain.model.vulnerability.Vulnerability;
+import org.crbf.application.model.report.AlternativeFixSummary;
 
 public class RiskReportAssembler {
+
+        private final RiskWeights riskWeights;
+
+        public RiskReportAssembler() {
+                this(RiskWeights.defaults());
+        }
+
+        public RiskReportAssembler(RiskWeights riskWeights) {
+                this.riskWeights = riskWeights == null ? RiskWeights.defaults() : riskWeights;
+        }
 
         public RiskReport assemble(
                         Path projectPath,
@@ -53,8 +67,39 @@ public class RiskReportAssembler {
                                 dependencyGraph.size(),
                                 scannedArtifacts,
                                 findings,
+                                toResidualRiskSummary(candidates, plan),
                                 toGlobalValidationSummary(plan.globalGraphValidation()),
                                 vulnerabilityLookupFailures);
+        }
+
+        /**
+         * Splits residual risk (deferred candidates' contextual risk) into
+         * "actionable" — a fix or a known migration path exists, it just wasn't
+         * selected or isn't automatable — versus "blocked" — no remediation
+         * path is known at all. The Z3 optimiser's own totalResidualRisk sums
+         * both together; this only adds a partition on top, computed with the
+         * same {@link RiskWeights} the optimiser used, without touching it.
+         */
+        private ResidualRiskSummary toResidualRiskSummary(
+                        List<RemediationCandidate> candidates, RemediationPlan plan) {
+                double actionable = 0.0;
+                double blocked = 0.0;
+
+                for (RemediationCandidate candidate : candidates) {
+                        boolean deferred = findDecision(plan, candidate)
+                                        .map(d -> !d.shouldUpgrade())
+                                        .orElse(true);
+                        if (!deferred) {
+                                continue;
+                        }
+                        if (candidate.hasFixAvailable() || candidate.hasAlternativeFix()) {
+                                actionable += candidate.contextualRisk(riskWeights);
+                        } else {
+                                blocked += candidate.contextualRisk(riskWeights);
+                        }
+                }
+
+                return new ResidualRiskSummary(actionable, blocked);
         }
 
         private ArtifactFinding toFinding(
@@ -147,13 +192,18 @@ public class RiskReportAssembler {
 
         private RemediationSummary toRemediationSummary(
                         RemediationCandidate candidate, Optional<RemediationDecision> decision) {
+                UpgradeDecision label = resolveDecisionLabel(candidate, decision);
                 return new RemediationSummary(
-                                resolveDecisionLabel(candidate, decision),
-                                decision.map(RemediationDecision::rationale)
-                                                .orElse("No optimisation decision available."),
+                                label,
+                                resolveRationale(candidate, decision, label),
                                 decision.map(RemediationDecision::riskReduction).orElse(0.0),
                                 decision.map(RemediationDecision::effortCost).orElse(0.0),
-                                candidate.fixVersion().orElseThrow());
+                                candidate.fixVersion().orElse(null),
+                                candidate.alternativeFix().map(this::toAlternativeFixSummary));
+        }
+
+        private AlternativeFixSummary toAlternativeFixSummary(AlternativeFix fix) {
+                return new AlternativeFixSummary(fix.groupId(), fix.artifactId(), fix.version());
         }
 
         private UpgradeDecision resolveDecisionLabel(
@@ -163,7 +213,31 @@ public class RiskReportAssembler {
                                 .map(d -> candidate.reachabilityStatus().isReachable()
                                                 ? UpgradeDecision.MANDATORY
                                                 : UpgradeDecision.RECOMMENDED)
-                                .orElse(UpgradeDecision.DEFER);
+                                .orElseGet(() -> candidate.hasAlternativeFix()
+                                                ? UpgradeDecision.MIGRATION_AVAILABLE
+                                                : UpgradeDecision.DEFER);
+        }
+
+        /**
+         * MIGRATION_AVAILABLE candidates never went through Z3 (they were
+         * excluded alongside every other no-direct-fix candidate — see
+         * {@code RemediationCandidate::hasFixAvailable} filters in
+         * {@code Z3RemediationAdapter}), so the generic "No fix version
+         * available." rationale attached there would otherwise read as "there
+         * is nothing to do." There is: a manual migration, named explicitly
+         * here so the report cannot be misread as "no action needed" for the
+         * artifact with the most real exposure.
+         */
+        private String resolveRationale(
+                        RemediationCandidate candidate, Optional<RemediationDecision> decision, UpgradeDecision label) {
+                if (label == UpgradeDecision.MIGRATION_AVAILABLE) {
+                        AlternativeFix fix = candidate.alternativeFix().orElseThrow();
+                        return "No direct fix for " + candidate.artifact().ga() + ". A fix exists under a "
+                                        + "different Maven coordinate: " + fix.gav() + " — requires manual "
+                                        + "migration (dependency and package rename), not an automatic version bump.";
+                }
+                return decision.map(RemediationDecision::rationale)
+                                .orElse("No optimisation decision available.");
         }
 
         private GlobalGraphValidationSummary toGlobalValidationSummary(GlobalGraphValidation gv) {

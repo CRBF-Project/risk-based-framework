@@ -8,6 +8,7 @@ public record RiskReport(
         int totalDependencyPaths,
         List<String> scannedArtifacts,
         List<ArtifactFinding> findings,
+        ResidualRiskSummary residualRisk,
         GlobalGraphValidationSummary globalGraphValidation,
         List<String> vulnerabilityLookupFailures) {
     public RiskReport {
