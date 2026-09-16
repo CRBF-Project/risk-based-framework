@@ -43,5 +43,4 @@ project_id,repo_url,commit_hash,build_cmd,uberjar_path,plugin_goal
   vulnerability identifier as tie-breaker. Neither tool orders its own output.
 - Vulnerability identity is canonicalised to the CVE identifier where an alias
   exists, so that GHSA and CVE records join correctly.
-- The join key excludes the module. See the docstring of `key_of`.
 - A build failure records an errored run and the batch continues.
