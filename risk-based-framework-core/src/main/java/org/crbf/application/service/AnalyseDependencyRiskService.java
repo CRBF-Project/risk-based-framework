@@ -14,10 +14,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.crbf.application.model.report.RiskReport;
+import org.crbf.application.model.vex.VexFinding;
 import org.crbf.application.port.in.AnalyseDependencyRiskUseCase;
 import org.crbf.application.port.out.AnalyseReachabilityPort;
 import org.crbf.application.port.out.DetectBreakingChangesPort;
 import org.crbf.application.port.out.ExportRiskReportPort;
+import org.crbf.application.port.out.ExportVexPort;
 import org.crbf.application.port.out.LoadEpssScoresPort;
 import org.crbf.application.port.out.LoadStabilityMetricsPort;
 import org.crbf.application.port.out.LoadVulnerabilitiesPort;
@@ -55,6 +57,8 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
         private final RiskReportAssembler reportAssembler;
         private final ExportRiskReportPort exportRiskReportPort;
         private final UpgradePathAnalyser upgradePathAnalyser;
+        private final ExportVexPort exportVexPort;
+        
 
         private final AnalysisProgressLogger logger = new AnalysisProgressLogger();
 
@@ -68,7 +72,8 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                         ResolveTransitiveDependenciesPort resolveTransitiveDepsPort,
                         OptimiseRemediationPort optimizeRemediationPort,
                         RiskReportAssembler reportAssembler,
-                        ExportRiskReportPort exportRiskReportPort) {
+                        ExportRiskReportPort exportRiskReportPort,
+                        ExportVexPort exportVexPort) {
 
                 this.resolveArtifactPort = Objects.requireNonNull(resolveArtifactPort);
                 this.loadVulnerabilitiesPort = Objects.requireNonNull(loadVulnerabilitiesPort);
@@ -79,6 +84,7 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                 this.optimizeRemediationPort = Objects.requireNonNull(optimizeRemediationPort);
                 this.reportAssembler = Objects.requireNonNull(reportAssembler);
                 this.exportRiskReportPort = Objects.requireNonNull(exportRiskReportPort);
+                this.exportVexPort = Objects.requireNonNull(exportVexPort);
                 this.upgradePathAnalyser = new UpgradePathAnalyser(
                                 Objects.requireNonNull(loadVulnerabilitiesPort),
                                 Objects.requireNonNull(resolveTransitiveDepsPort),
@@ -133,6 +139,17 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                 RiskReport report = reportAssembler.assemble(projectPath, dependencyGraph,
                                 uniqueArtifacts, candidates, plan, lookupFailures);
                 exportRiskReportPort.exportReport(report, projectPath.resolve("target"));
+
+                List<VexFinding> vexFindings = candidates.stream()
+                        .flatMap(candidate ->
+                                candidate.reachabilityReports().stream()
+                                        .map(reachability ->
+                                                new VexFinding(
+                                                        candidate.artifact(),
+                                                        reachability)))
+                        .toList();
+
+                exportVexPort.exportVex(vexFindings, projectPath.resolve("target"));
 
                 logger.logAnalysisComplete();
         }

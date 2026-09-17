@@ -26,6 +26,7 @@ import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.crbf.adapter.out.epss.EpssAdapter;
+import org.crbf.adapter.out.export.CycloneDxVexAdapter;
 import org.crbf.adapter.out.export.ReportGeneratorAdapter;
 import org.crbf.adapter.out.goblin.GoblinWeaverStabilityAdapter;
 import org.crbf.adapter.out.japicmp.JapicmpCompatibilityAdapter;
@@ -314,7 +315,8 @@ public class AnalyseMojo extends AbstractMojo {
                 new GoblinWeaverGraphAdapter(goblinUrl),
                 new Z3RemediationAdapter(effortBudget, weights),
                 new RiskReportAssembler(weights),
-                new ReportGeneratorAdapter());
+                new ReportGeneratorAdapter(),
+                new CycloneDxVexAdapter());
     }
 
     /**
