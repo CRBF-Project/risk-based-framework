@@ -82,7 +82,7 @@ class GoblinWeaverClient {
                         return Optional.of(objectMapper.readValue(response.body(), responseType));
 
                 } catch (Exception e) {
-                        LOG.error("Request to {} failed for {} — {}", endpoint, label, e.getMessage());
+                        LOG.error("Request to {} failed for {} — {}", endpoint, label, GoblinErrors.describe(e));
                         return Optional.empty();
                 }
         }

@@ -77,7 +77,7 @@ public class GoblinWeaverStabilityAdapter implements LoadStabilityMetricsPort {
                                                         artifact));
 
                 } catch (Exception e) {
-                        LOG.error("Unexpected error loading stability for {}: {}", artifact.gav(), e.getMessage());
+                        LOG.error("Unexpected error loading stability for {}: {}", artifact.gav(), GoblinErrors.describe(e));
                         return Optional.empty();
                 }
         }

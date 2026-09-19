@@ -329,13 +329,13 @@ public record RemediationCandidate(
                 () -> summary.append("Fix: no Goblin data"));
 
         upgradePathValidation.ifPresent(validation -> {
-            summary.append(" | Upgrade path: ");
-            summary.append(
-                    validation.isCleanPath()
-                            ? "CLEAN"
-                            : "HAS RISKS");
+            // An unvalidated path is not a risky path; reporting UNKNOWN as
+            // "HAS RISKS" would read an unreachable ecosystem service as evidence.
+            UpgradePathStatus pathStatus = validation.upgradePathStatus();
 
-            if (!validation.isCleanPath()) {
+            summary.append(" | Upgrade path: ").append(pathStatus.name());
+
+            if (pathStatus == UpgradePathStatus.HAS_RISKS) {
                 summary.append(
                         String.format(
                                 " (%d new CVE(s))",

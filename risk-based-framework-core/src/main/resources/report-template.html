@@ -953,7 +953,7 @@
         adoptionRate: get(/AdoptionRate=([\d.]+%)/),
         lifespan: get(/Lifespan=(\d+)/),
         maintenanceRate: get(/MaintenanceRate=([\d.]+)/),
-        upgradePath: get(/Upgrade path:\s*([A-Z]+)/),
+        upgradePath: get(/Upgrade path:\s*([A-Z_]+)/),
         upgradePathSecuritySignal: get(/upgradePathSecuritySignal:\s*([\d.]+)/),
       };
     }
@@ -974,7 +974,12 @@
         : 'No data';
       const adoption = s.adoptionRate != null ? s.adoptionRate : 'No data';
       const lifespan = s.lifespan != null ? `${s.lifespan} days` : 'No data';
-      const upgClean = s.upgradePath === 'CLEAN';
+      // An unvalidated path is a third state, not a risky one.
+      const upgPath = s.upgradePath === 'CLEAN'
+        ? { colour: '#166534', label: 'None' }
+        : s.upgradePath === 'HAS_RISKS'
+          ? { colour: '#b91c1c', label: 'Yes &mdash; review required' }
+          : { colour: '#64748b', label: 'Not validated &mdash; ecosystem data unavailable' };
 
       return `<div style="margin-top:14px">
     <h4 class="sub">Ecosystem Analysis</h4>
@@ -1029,7 +1034,7 @@
         <div class="stability-card-title">Upgrade path assessment</div>
         <div class="stability-row">
           <span class="stability-label">New vulnerabilities introduced</span>
-          <span class="stability-value" style="color:${upgClean ? '#166534' : '#b91c1c'}">${upgClean ? 'None' : 'Yes — review required'}</span>
+          <span class="stability-value" style="color:${upgPath.colour}">${upgPath.label}</span>
           <span class="stability-desc">Whether the fix version itself carries known CVEs</span>
         </div>
         <div class="stability-row">

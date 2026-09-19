@@ -56,7 +56,7 @@ public class GoblinWeaverGraphAdapter implements ResolveTransitiveDependenciesPo
                         return deps;
 
                 } catch (Exception e) {
-                        LOG.error("resolveTransitiveDeps failed for {}: {}", artifact.gav(), e.getMessage());
+                        LOG.error("resolveTransitiveDeps failed for {}: {}", artifact.gav(), GoblinErrors.describe(e));
                         return Set.of();
                 }
         }
@@ -76,7 +76,7 @@ public class GoblinWeaverGraphAdapter implements ResolveTransitiveDependenciesPo
                         return upgradeCandidateMapper.toDomain(response);
 
                 } catch (Exception e) {
-                        LOG.error("getNewerVersionsWithCves failed for {}: {}", artifact.gav(), e.getMessage());
+                        LOG.error("getNewerVersionsWithCves failed for {}: {}", artifact.gav(), GoblinErrors.describe(e));
                         return List.of();
                 }
         }
@@ -98,7 +98,7 @@ public class GoblinWeaverGraphAdapter implements ResolveTransitiveDependenciesPo
                         return result;
 
                 } catch (Exception e) {
-                        LOG.error("resolveTransitiveDepsWithCves failed for {}: {}", artifact.gav(), e.getMessage());
+                        LOG.error("resolveTransitiveDepsWithCves failed for {}: {}", artifact.gav(), GoblinErrors.describe(e));
                         return TransitiveDepsResult.unavailable();
                 }
         }
@@ -128,7 +128,7 @@ public class GoblinWeaverGraphAdapter implements ResolveTransitiveDependenciesPo
                         return result;
 
                 } catch (Exception e) {
-                        LOG.error("resolveGlobalGraph failed: {}", e.getMessage());
+                        LOG.error("resolveGlobalGraph failed: {}", GoblinErrors.describe(e));
                         return TransitiveDepsResult.unavailable();
                 }
         }
