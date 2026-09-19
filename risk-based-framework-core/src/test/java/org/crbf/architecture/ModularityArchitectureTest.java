@@ -5,6 +5,8 @@ import com.tngtech.archunit.core.importer.ClassFileImporter;
 import org.junit.jupiter.api.Test;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
+import com.tngtech.archunit.core.importer.ImportOption;
+
 
 class ModularityArchitectureTest {
 
@@ -19,7 +21,10 @@ class ModularityArchitectureTest {
     private static final String Z3_PACKAGE = "com.microsoft.z3..";
 
     private static final JavaClasses PROJECT_CLASSES =
-            new ClassFileImporter().importPackages(ROOT_PACKAGE);
+        new ClassFileImporter()
+                .withImportOption(
+                        ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
+                .importPackages(ROOT_PACKAGE);
 
     @Test
     void domainShouldNotDependOnApplicationOrAdapters() {

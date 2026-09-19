@@ -190,14 +190,14 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                                         .map(r -> r.contextualise(callGraph));
 
                         return Optional.of(new RemediationCandidate(locatedArtifact.artifact(),
-                                        vulnerabilities, reachability, reachabilityResults,
+                                        vulnerabilities, reachabilityResults,
                                         contextualReport, Optional.of(validation.proposedVersion()),
                                         Optional.empty(),
                                         currentStability, fixStability, Optional.of(validation)));
                 }
 
                 return Optional.of(new RemediationCandidate(
-                                locatedArtifact.artifact(), vulnerabilities, reachability,
+                                locatedArtifact.artifact(), vulnerabilities,
                                 reachabilityResults,
                                 Optional.empty(), vulnerableArtifact.requiredFixVersion().map(Version::value),
                                 vulnerableArtifact.requiredAlternativeFix(),
@@ -229,7 +229,7 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                         fixStability.ifPresent(s -> logger.logStability(fixArtifact, s, "Fix version"));
 
                         return Optional.of(new RemediationCandidate(
-                                        artifact, enrichedVulns, ReachabilityStatus.UNKNOWN, List.of(),
+                                        artifact, enrichedVulns, List.of(),
                                         validation.compatibilityReport(),
                                         Optional.of(validation.proposedVersion()),
                                         Optional.empty(),
@@ -237,7 +237,7 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                 }
 
                 return Optional.of(new RemediationCandidate(
-                                artifact, enrichedVulns, ReachabilityStatus.UNKNOWN, List.of(),
+                                artifact, enrichedVulns, List.of(),
                                 Optional.empty(), Optional.empty(),
                                 vulnerableArtifact.requiredAlternativeFix(),
                                 currentStability, Optional.empty(), Optional.empty()));
@@ -270,9 +270,14 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
          */
         private Optional<EcosystemStability> loadStabilityMetrics(Artifact artifact, Boolean isFixVersion) {
                 try {
-                        EcosystemStability stability = loadStabilityMetricsPort.loadMetrics(artifact);
-                        logger.logStabilityLoaded(isFixVersion ? "Fix version" : "Current", artifact, stability);
-                        return Optional.of(stability);
+                        Optional<EcosystemStability> stability = loadStabilityMetricsPort.loadMetrics(artifact);
+                        stability.ifPresentOrElse(
+                                        s -> logger.logStabilityLoaded(
+                                                        isFixVersion ? "Fix version" : "Current", artifact, s),
+                                        () -> logger.logStabilityFailed(
+                                                        isFixVersion ? "fix" : "current", artifact.gav(),
+                                                        "no ecosystem data available"));
+                        return stability;
                 } catch (Exception e) {
                         logger.logStabilityFailed(isFixVersion ? "fix" : "current", artifact.gav(), e.getMessage());
                         return Optional.empty();

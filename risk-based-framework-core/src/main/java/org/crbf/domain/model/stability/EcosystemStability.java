@@ -31,18 +31,4 @@ public record EcosystemStability(
                                                 : Instant.EPOCH);
         }
 
-        /**
-         * Returns an EcosystemStability representing an artifact for which
-         * Goblin has no data (e.g. very recent or private artifact).
-         */
-        public static EcosystemStability unknown(String version) {
-                return new EcosystemStability(
-                                version,
-                                new ToodDays(0),
-                                new VersionLag(0),
-                                new AdoptionRate(0.0),
-                                new AdoptionLifespan(0.0),
-                                new MaintenanceRate(0.0),
-                                Instant.EPOCH);
-        }
 }

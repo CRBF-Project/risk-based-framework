@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.http.HttpClient;
 import java.time.Duration;
+import java.util.Optional;
 
 /**
  * Outbound adapter that retrieves ecosystem stability metrics from the
@@ -45,7 +46,7 @@ public class GoblinWeaverStabilityAdapter implements LoadStabilityMetricsPort {
         }
 
         @Override
-        public EcosystemStability loadMetrics(Artifact artifact) {
+        public Optional<EcosystemStability> loadMetrics(Artifact artifact) {
                 try {
                         GoblinWeaverReleaseResponse releaseResponse = client
                                         .fetchReleaseMetrics(
@@ -53,6 +54,12 @@ public class GoblinWeaverStabilityAdapter implements LoadStabilityMetricsPort {
                                                         artifact.artifactId().value(),
                                                         artifact.version().value())
                                         .orElse(null);
+
+                        if (releaseResponse == null) {
+                                LOG.warn("No Goblin release data for {}; stability reported as unavailable",
+                                                artifact.gav());
+                                return Optional.empty();
+                        }
 
                         GoblinWeaverArtifactResponse artifactResponse = client
                                         .fetchArtifactMetrics(artifact.groupId().value(), artifact.artifactId().value())
@@ -65,13 +72,14 @@ public class GoblinWeaverStabilityAdapter implements LoadStabilityMetricsPort {
                                                         artifact.version().value())
                                         .orElse(null);
 
-                        return mapper.toDomain(releaseResponse, artifactResponse, newVersionsResponse, artifact);
+                        return Optional.of(
+                                        mapper.toDomain(releaseResponse, artifactResponse, newVersionsResponse,
+                                                        artifact));
 
                 } catch (Exception e) {
                         LOG.error("Unexpected error loading stability for {}: {}", artifact.gav(), e.getMessage());
+                        return Optional.empty();
                 }
-
-                return EcosystemStability.unknown(artifact.version().value());
         }
 
 }

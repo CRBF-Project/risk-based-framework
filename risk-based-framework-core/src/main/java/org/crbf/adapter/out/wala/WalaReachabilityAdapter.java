@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -253,13 +254,33 @@ public class WalaReachabilityAdapter implements AnalyseReachabilityPort {
                                 scope,
                                 scope.getApplicationLoader());
 
+                List<String> skippedJars = new ArrayList<>();
+
                 for (Path jarPath : allProjectJars) {
-                        if (jarPath != null && jarPath.toFile().exists()) {
+                        if (jarPath == null || !jarPath.toFile().exists()) {
+                                continue;
+                        }
+
+                        try {
                                 AnalysisScopeReader.instance.addClassPathToScope(
                                                 jarPath.toAbsolutePath().toString(),
                                                 scope,
                                                 scope.getExtensionLoader());
+                        } catch (Throwable t) {
+                                // WALA follows Class-Path manifest entries and fails hard
+                                // (UnimplementedError, an Error) when a referenced sibling JAR is
+                                // absent, which is common in the Maven repository layout. A single
+                                // malformed manifest must not abort the whole analysis.
+                                skippedJars.add(jarPath.getFileName().toString());
+                                LOG.warn("Skipping {} in call graph scope: {}",
+                                                jarPath.getFileName(), t.getMessage());
                         }
+                }
+
+                if (!skippedJars.isEmpty()) {
+                        LOG.warn("{} JAR(s) excluded from the call graph scope; reachability for classes "
+                                        + "they contain may be under-approximated: {}",
+                                        skippedJars.size(), skippedJars);
                 }
 
                 IClassHierarchy cha = ClassHierarchyFactory.make(scope);

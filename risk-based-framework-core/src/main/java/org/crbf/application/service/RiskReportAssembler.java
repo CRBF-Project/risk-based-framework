@@ -106,6 +106,7 @@ public class RiskReportAssembler {
                         RemediationCandidate candidate, Optional<RemediationDecision> decision) {
                 return new ArtifactFinding(
                                 candidate.artifact().gav(),
+                                candidate.contextualRisk(riskWeights),
                                 toCveSummaries(candidate.vulnerabilities()),
                                 toReachabilitySummary(candidate),
                                 toCompatibilitySummary(candidate.compatibilityReport()),
@@ -142,8 +143,8 @@ public class RiskReportAssembler {
                                 .toList();
 
                 return new ReachabilitySummary(
-                                candidate.reachabilityStatus(),
-                                reachableMethods);
+                        candidate.aggregateReachabilityStatus(),
+                        reachableMethods);
         }
 
         private CompatibilitySummary toCompatibilitySummary(Optional<CompatibilityReport> cr) {
@@ -207,15 +208,17 @@ public class RiskReportAssembler {
         }
 
         private UpgradeDecision resolveDecisionLabel(
-                        RemediationCandidate candidate, Optional<RemediationDecision> decision) {
-                return decision
-                                .filter(RemediationDecision::shouldUpgrade)
-                                .map(d -> candidate.reachabilityStatus().isReachable()
-                                                ? UpgradeDecision.MANDATORY
-                                                : UpgradeDecision.RECOMMENDED)
-                                .orElseGet(() -> candidate.hasAlternativeFix()
-                                                ? UpgradeDecision.MIGRATION_AVAILABLE
-                                                : UpgradeDecision.DEFER);
+                RemediationCandidate candidate,
+                Optional<RemediationDecision> decision) {
+
+        return decision
+                .filter(RemediationDecision::shouldUpgrade)
+                .map(d -> candidate.isMandatoryUpgrade()
+                        ? UpgradeDecision.MANDATORY
+                        : UpgradeDecision.RECOMMENDED)
+                .orElseGet(() -> candidate.hasAlternativeFix()
+                        ? UpgradeDecision.MIGRATION_AVAILABLE
+                        : UpgradeDecision.DEFER);
         }
 
         /**

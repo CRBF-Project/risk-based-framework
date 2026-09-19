@@ -342,6 +342,12 @@
       border: 1px solid #fcd34d
     }
 
+    .badge.MIGRATION_AVAILABLE {
+      background: #f5f3ff;
+      color: #5b21b6;
+      border: 1px solid #c4b5fd
+    }
+
     .badge.DEFER {
       background: #f0fdf4;
       color: #166534;
@@ -880,7 +886,7 @@
       const ep = cve.epss?.percentile;
       const cwes = (cve.cwes || []).map(c => `<code>${esc(c)}</code>`).join(', ') || '—';
       const als = (cve.aliases || []).map(a => `<span class="alias">${esc(a)}</span>`).join(' ');
-      const url = esc('https://osv.dev/vulnerability/${id}');
+      const url = esc(`https://osv.dev/vulnerability/${id}`);
       const epssHtml = ev != null
         ? `<span>EPSS <b style="color:${epssClr(ev)}">${(ev * 100).toFixed(3)}%</b>
        ${ep != null ? `<span style="color:#94a3b8">(P${Math.round(ep * 100)})</span>` : ''}
@@ -948,7 +954,7 @@
         lifespan: get(/Lifespan=(\d+)/),
         maintenanceRate: get(/MaintenanceRate=([\d.]+)/),
         upgradePath: get(/Upgrade path:\s*([A-Z]+)/),
-        netRiskDelta: get(/netRiskDelta:\s*([\d.]+)/),
+        upgradePathSecuritySignal: get(/upgradePathSecuritySignal:\s*([\d.]+)/),
       };
     }
     function renderStability(summary, fixVersion, currentVersion) {
@@ -958,13 +964,16 @@
       const toodDays = parseInt(s.tood || '0');
       const toodExtra = toodDays > 365 ? ` (~${(toodDays / 365).toFixed(1)} years)` : '';
       const lag = parseInt(s.versionLag || '0');
-      const score = parseFloat(s.stabilityScore || '0');
-      const scorePct = Math.round(score * 100);
+      // Unavailable ecosystem data must not be rendered as zero confidence.
+      const scoreAvailable = s.stabilityScore != null;
+      const scorePct = scoreAvailable ? Math.round(parseFloat(s.stabilityScore) * 100) : 0;
       const scoreCls = scorePct < 20 ? 'low' : scorePct < 60 ? 'mid' : 'high';
-      const maint = parseFloat(s.maintenanceRate || '0');
-      const maintYr = (maint * 365).toFixed(1);
-      const adoption = s.adoptionRate && s.adoptionRate !== '0%' ? s.adoptionRate : 'No data';
-      const lifespan = parseInt(s.lifespan || '0') > 0 ? `${s.lifespan} days` : 'No data';
+      // A measured zero is a real signal; only an absent measurement is "No data".
+      const maintYr = s.maintenanceRate != null
+        ? (parseFloat(s.maintenanceRate) * 365).toFixed(1) + ' releases/year'
+        : 'No data';
+      const adoption = s.adoptionRate != null ? s.adoptionRate : 'No data';
+      const lifespan = s.lifespan != null ? `${s.lifespan} days` : 'No data';
       const upgClean = s.upgradePath === 'CLEAN';
 
       return `<div style="margin-top:14px">
@@ -992,9 +1001,13 @@
         <div class="stability-card-title">Fix version${fixVersion ? ' (' + esc(fixVersion) + ')' : ''} - Ecosystem Health</div>
         <div class="stability-row">
           <span class="stability-label">Stability score</span>
-          <span class="stability-value">${scorePct}/100</span>
-          <div class="score-bar"><div class="score-fill ${scoreCls}" style="width:${scorePct}%"></div></div>
-          <span class="stability-desc">Composite of adoption rate, active lifespan, and release frequency</span>
+          <span class="stability-value">${scoreAvailable ? scorePct + '/100' : 'No data'}</span>
+          ${scoreAvailable
+          ? `<div class="score-bar"><div class="score-fill ${scoreCls}" style="width:${scorePct}%"></div></div>`
+          : ''}
+          <span class="stability-desc">${scoreAvailable
+          ? 'Composite of adoption rate, active lifespan, and release frequency'
+          : 'Ecosystem data unavailable for this version &mdash; not the same as low confidence'}</span>
         </div>
         <div class="stability-row">
           <span class="stability-label">Adoption rate</span>
@@ -1008,7 +1021,7 @@
         </div>
         <div class="stability-row">
           <span class="stability-label">Release frequency</span>
-          <span class="stability-value">${maintYr} releases/year</span>
+          <span class="stability-value">${esc(maintYr)}</span>
           <span class="stability-desc">How actively new versions are published by maintainers</span>
         </div>
       </div>
@@ -1020,8 +1033,8 @@
           <span class="stability-desc">Whether the fix version itself carries known CVEs</span>
         </div>
         <div class="stability-row">
-          <span class="stability-label">Net risk delta</span>
-          <span class="stability-value">${s.netRiskDelta != null ? s.netRiskDelta : 'N/A'}</span>
+          <span class="stability-label">Upgrade path security signal</span>
+          <span class="stability-value">${s.upgradePathSecuritySignal != null ? s.upgradePathSecuritySignal : 'N/A'}</span>
           <span class="stability-desc">Change in aggregate vulnerability risk score after upgrade</span>
         </div>
       </div>
@@ -1149,10 +1162,15 @@
     ].map(c => `<div class="card ${c.c}"><div class="val">${c.v}</div><div class="lbl">${c.l}</div></div>`).join('');
 
     // ─── Action plan ──────────────────────────────────────────────────────────
-    const ORDER = { MANDATORY: 0, RECOMMENDED: 1, DEFER: 2 };
+    const ORDER = { MANDATORY: 0, RECOMMENDED: 1, MIGRATION_AVAILABLE: 2, DEFER: 3 };
+    // Within a decision group, order by the risk of leaving the artifact as it is.
+    // remediation.riskReduction is what the plan removes, and is zero whenever no
+    // automatic upgrade exists — sorting on it would bury confirmed-reachable
+    // vulnerabilities that simply have no one-line fix.
     const sorted = [...findings].sort((a, b) => {
       const da = a.remediation?.decision || 'DEFER', db = b.remediation?.decision || 'DEFER';
-      return (ORDER[da] ?? 2) - (ORDER[db] ?? 2) || num(b.remediation?.riskReduction) - num(a.remediation?.riskReduction);
+      return (ORDER[da] ?? 3) - (ORDER[db] ?? 3)
+        || num(b.contextualRisk) - num(a.contextualRisk);
     });
 
     document.getElementById('plan-cnt').textContent = sorted.length + ' action' + (sorted.length !== 1 ? 's' : '');
@@ -1171,7 +1189,9 @@
         const vl = f.vulnerabilities || [];
         const rm = f.reachability?.reachableMethods || [];
         const sid = 'ab-' + i, cid = 'ch-' + i;
-        const stepCls = d === 'MANDATORY' ? 'r' : d === 'RECOMMENDED' ? 'a' : 'g';
+        const stepCls = d === 'MANDATORY' ? 'r'
+          : (d === 'RECOMMENDED' || d === 'MIGRATION_AVAILABLE') ? 'a'
+            : 'g';
         const sevs = [...new Set(vl.map(v => v.severity).filter(Boolean))]
           .map(s => `<span class="sev ${s}">${s}</span>`).join(' ');
 
@@ -1232,6 +1252,7 @@
             ${sevs}
           </div>
           <div class="action-metrics">
+            <span class="metric">Contextual risk: <b>${fmt(f.contextualRisk)}</b></span>
             <span class="metric">Risk reduction: <b>${fmt(f.remediation?.riskReduction)}</b></span>
             <span class="metric">Effort: <b>${fmt(f.remediation?.effortCost, 1)} units</b></span>
             ${bc > 0 ? `<span class="metric" style="color:${adj ? '#b45309' : '#b91c1c'}">${bc} breaking change${bc !== 1 ? 's' : ''}${adj ? ' &mdash; not reachable' : ''}</span>` : ''}

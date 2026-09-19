@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.Optional;
+import org.crbf.domain.model.optimisation.UpgradePathStatus;
 
 public class AnalysisProgressLogger {
 
@@ -167,9 +169,12 @@ public class AnalysisProgressLogger {
         deps.forEach(dep -> LOG.info("    - {}", dep.gav()));
     }
 
-    public void logUpgradeValidationResult(boolean isClean, double netRiskDelta) {
-        LOG.info("  [UpgradeValidation] Clean path: {} | netRiskDelta: {}",
-                isClean, String.format("%.2f", netRiskDelta));
+    public void logUpgradeValidationResult(
+            UpgradePathStatus status,
+            Optional<Double> securitySignal) {
+
+        String signal = securitySignal.map(value -> String.format("%.2f", value)).orElse("unavailable");
+        LOG.info("  [UpgradeValidation] Path status: {} | Security signal: {}", status, signal);
     }
 
     public void logGoblinUnavailableUsingOsvFix(String osvFix) {

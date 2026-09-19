@@ -6,44 +6,59 @@ import org.crbf.domain.model.compatibility.CompatibilityStatus;
 import org.crbf.domain.model.reachability.ReachabilityStatus;
 import org.crbf.domain.model.reachability.VulnerabilityReachability;
 import org.crbf.domain.model.stability.EcosystemStability;
-import org.crbf.domain.model.stability.PfetDays;
 import org.crbf.domain.model.stability.StabilityScore;
 import org.crbf.domain.model.vulnerability.AlternativeFix;
 import org.crbf.domain.model.vulnerability.Severity;
 import org.crbf.domain.model.vulnerability.Vulnerability;
+import org.crbf.domain.model.vulnerability.VulnerabilityId;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Value Object that aggregates all contextual signals for a single vulnerable
- * artifact, forming the input unit for the Z3 optimisation step.
+ * artifact, forming the input unit for the remediation optimisation step.
  *
- * One candidate is created per unique vulnerable artifact — not per CVE.
- * Multiple CVEs on the same artifact are represented in the
- * {@code vulnerabilities}
- * list, and the worst-case signals (highest CVSS, worst compatibility) are used
- * by the optimiser.
+ * <p>
+ * One candidate is created per unique vulnerable artifact. Each vulnerability
+ * is scored independently using its own CVSS, EPSS and reachability status.
+ * The artifact-level contextual risk is the maximum contextual risk among its
+ * vulnerabilities.
  *
- * @param artifact            The artifact under analysis.
- * @param vulnerabilities     All known CVEs affecting this artifact version.
- * @param reachabilityStatus  Whether the artifact's classes are reachable
- *                            from the project's call graph (WALA/0-CFA result).
- * @param compatibilityReport API compatibility of the candidate fix version,
- *                            or {@code Optional.empty()} if no fix exists,
- *                            the JAR was unavailable, or analysis failed.
- * @param fixVersion          The earliest known safe version, or {@code null}.
- * @param alternativeFix      A fix under a different Maven coordinate (e.g.
- *                            the library was renamed), only populated when
- *                            {@code fixVersion} is empty. Requires manual
- *                            migration — never surfaced as a plain upgrade.
- * @param currentStability    Goblin metrics for the current artifact version.
- * @param fixVersionStability Goblin metrics for the proposed fix version.
+ * @param artifact
+ *                                  The artifact under analysis.
+ * @param vulnerabilities
+ *                                  All known vulnerabilities affecting this
+ *                                  artifact version.
+ * @param reachabilityReports
+ *                                  Exactly one reachability result per
+ *                                  vulnerability.
+ * @param compatibilityReport
+ *                                  API compatibility of the candidate fix
+ *                                  version,
+ *                                  or {@code Optional.empty()} when
+ *                                  unavailable.
+ * @param fixVersion
+ *                                  The selected safe version, if one exists.
+ * @param alternativeFix
+ *                                  A fix available under a different Maven
+ *                                  coordinate,
+ *                                  requiring manual migration.
+ * @param currentStability
+ *                                  Ecosystem metrics for the currently used
+ *                                  version.
+ * @param fixVersionStability
+ *                                  Ecosystem metrics for the proposed fix
+ *                                  version.
+ * @param upgradePathValidation
+ *                                  Validation of the proposed upgrade path.
  */
 public record RemediationCandidate(
         Artifact artifact,
         List<Vulnerability> vulnerabilities,
-        ReachabilityStatus reachabilityStatus,
         List<VulnerabilityReachability> reachabilityReports,
         Optional<CompatibilityReport> compatibilityReport,
         Optional<String> fixVersion,
@@ -52,121 +67,217 @@ public record RemediationCandidate(
         Optional<EcosystemStability> fixVersionStability,
         Optional<UpgradePathValidation> upgradePathValidation) {
 
-    private static final double SIGNAL_SCALE = 10.0;
-
-    private static final double PFET_SATURATION_DAYS = 365.0;
-
-    private static final double PFET_MAX_PENALTY = 0.2;
+    private static final double CVSS_MAX_SCORE = 10.0;
 
     private static final double PATH_QUALITY_FLOOR = 0.3;
-
     private static final double PATH_QUALITY_MIDPOINT = 0.5;
 
     public RemediationCandidate {
         if (artifact == null) {
             throw new IllegalArgumentException("Artifact cannot be null.");
         }
-        vulnerabilities = vulnerabilities == null ? List.of() : List.copyOf(vulnerabilities);
-        reachabilityReports = reachabilityReports == null ? List.of() : List.copyOf(reachabilityReports);
-        compatibilityReport = compatibilityReport == null ? Optional.empty() : compatibilityReport;
-        alternativeFix = alternativeFix == null ? Optional.empty() : alternativeFix;
-        currentStability = currentStability == null ? Optional.empty() : currentStability;
-        fixVersionStability = fixVersionStability == null ? Optional.empty() : fixVersionStability;
-        upgradePathValidation = upgradePathValidation == null ? Optional.empty() : upgradePathValidation;
+
+        vulnerabilities = vulnerabilities == null
+                ? List.of()
+                : List.copyOf(vulnerabilities);
+
+        reachabilityReports = reachabilityReports == null
+                ? List.of()
+                : List.copyOf(reachabilityReports);
+
+        compatibilityReport = compatibilityReport == null
+                ? Optional.empty()
+                : compatibilityReport;
+
+        fixVersion = fixVersion == null
+                ? Optional.empty()
+                : fixVersion;
+
+        alternativeFix = alternativeFix == null
+                ? Optional.empty()
+                : alternativeFix;
+
+        currentStability = currentStability == null
+                ? Optional.empty()
+                : currentStability;
+
+        fixVersionStability = fixVersionStability == null
+                ? Optional.empty()
+                : fixVersionStability;
+
+        upgradePathValidation = upgradePathValidation == null
+                ? Optional.empty()
+                : upgradePathValidation;
+
+        validateReachabilityReports(vulnerabilities, reachabilityReports);
     }
 
     /**
-     * Convenience factory that omits stability data.
-     * Falls back gracefully to neutral stability assumptions.
+     * Convenience factory that omits ecosystem stability and upgrade-path data.
      */
     public static RemediationCandidate withoutStability(
             Artifact artifact,
             List<Vulnerability> vulnerabilities,
-            ReachabilityStatus reachabilityStatus,
             List<VulnerabilityReachability> reachabilityReports,
             Optional<CompatibilityReport> compatibilityReport,
             Optional<String> fixVersion,
             Optional<AlternativeFix> alternativeFix) {
+
         return new RemediationCandidate(
-                artifact, vulnerabilities, reachabilityStatus, reachabilityReports,
-                compatibilityReport, fixVersion, alternativeFix,
-                Optional.empty(), Optional.empty(), Optional.empty());
+                artifact,
+                vulnerabilities,
+                reachabilityReports,
+                compatibilityReport,
+                fixVersion,
+                alternativeFix,
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty());
     }
 
     public boolean hasFixAvailable() {
-        return fixVersion != null && fixVersion.isPresent();
+        return fixVersion.isPresent();
     }
 
     /**
-     * A fix exists, but under a different Maven coordinate — requires
-     * manual migration, not an automatic version bump. Only meaningful
-     * alongside {@code !hasFixAvailable()}.
+     * A fix exists under a different Maven coordinate and therefore requires
+     * manual migration rather than a direct version upgrade.
      */
     public boolean hasAlternativeFix() {
-        return alternativeFix != null && alternativeFix.isPresent();
+        return alternativeFix.isPresent();
     }
 
     /**
-     * A CRITICAL+REACHABLE artifact is mandatory to address, regardless of budget.
-     * The combination of confirmed call-graph reachability with a CVSS ≥ 9.0
-     * represents the highest exploitability confidence.
+     * Returns the highest reachability classification observed across the
+     * vulnerabilities affecting this artifact.
      */
-    public boolean isMandatoryUpgrade() {
-        boolean hasCritical = vulnerabilities.stream()
-                .anyMatch(v -> v.severity() == Severity.CRITICAL);
-        return hasCritical
-                && reachabilityStatus.isReachable()
-                && hasFixAvailable();
+    public ReachabilityStatus aggregateReachabilityStatus() {
+        return reachabilityReports.stream()
+                .map(VulnerabilityReachability::status)
+                .max(Comparator.comparingInt(ReachabilityStatus::severity))
+                .orElse(ReachabilityStatus.UNKNOWN);
     }
 
-    public PfetDays pfetDays() {
-        return fixVersionStability()
-                .map(s -> PfetDays.of(s.releasedAt()))
-                .orElse(PfetDays.unknown());
+    /**
+     * An upgrade is mandatory when at least one CRITICAL vulnerability is
+     * reachable and a direct fix version is available.
+     */
+    public boolean isMandatoryUpgrade() {
+        if (!hasFixAvailable()) {
+            return false;
+        }
+
+        return vulnerabilities.stream()
+                .filter(vulnerability -> vulnerability.severity() == Severity.CRITICAL)
+                .anyMatch(vulnerability -> reachabilityStatusFor(vulnerability).isReachable());
     }
 
     public double contextualRisk() {
         return contextualRisk(RiskWeights.defaults());
     }
 
+    /**
+     * Computes the artifact-level contextual risk as the maximum contextual
+     * risk among the vulnerabilities affecting the artifact.
+     */
     public double contextualRisk(RiskWeights weights) {
-        double maxCvss = vulnerabilities.stream()
-                .mapToDouble(v -> v.cvss().value())
-                .max()
-                .orElse(0.0);
-
-        double maxEpss = vulnerabilities.stream()
-                .flatMap(v -> v.epss().stream())
-                .mapToDouble(epss -> epss.value())
-                .max()
-                .orElse(0.0);
-
-        // 0.5 is the neutral assumption when Goblin data is unavailable
         double stalenessUrgency = currentStability
                 .map(StabilityScore::stalenessUrgencyOf)
                 .orElse(0.5);
 
-        double reachabilityWeight = switch (reachabilityStatus) {
-            case REACHABLE_CONFIRMED -> weights.reachableWeight();
-            case REACHABLE_PROBABLE -> weights.reachableWeight();
-            case UNKNOWN -> weights.unknownWeight();
-            case UNREACHABLE -> weights.unreachableWeight();
-        };
-
-        double pfetMultiplier = 1.0 + Math.min(pfetDays().value() / PFET_SATURATION_DAYS, 1.0) * PFET_MAX_PENALTY;
-
-        double riskScore = (maxCvss * weights.cvssWeight())
-                + (maxEpss * SIGNAL_SCALE * weights.epssWeight())
-                + (stalenessUrgency * SIGNAL_SCALE * weights.stalenessWeight());
-
-        // netRiskDelta ∈ [-1, 1] → pathQualityFactor ∈ [PATH_QUALITY_FLOOR, 1.0]
-        // Upgrades that introduce new transitive CVEs yield less net benefit.
         double pathQualityFactor = upgradePathValidation
-                .map(upv -> Math.max(PATH_QUALITY_FLOOR,
-                        PATH_QUALITY_MIDPOINT + upv.netRiskDelta() * PATH_QUALITY_MIDPOINT))
+                .flatMap(UpgradePathValidation::upgradePathSecuritySignal)
+                .map(signal -> Math.max(
+                        PATH_QUALITY_FLOOR,
+                        PATH_QUALITY_MIDPOINT + signal * PATH_QUALITY_MIDPOINT))
                 .orElse(1.0);
 
-        return riskScore * reachabilityWeight * pathQualityFactor * pfetMultiplier;
+        return vulnerabilities.stream()
+                .mapToDouble(vulnerability -> contextualRiskOf(
+                        vulnerability,
+                        weights,
+                        stalenessUrgency,
+                        pathQualityFactor))
+                .max()
+                .orElse(0.0);
+    }
+
+    /**
+     * Computes contextual risk for one vulnerability, preserving the
+     * association between its CVSS, EPSS and reachability signals.
+     */
+    private double contextualRiskOf(
+            Vulnerability vulnerability,
+            RiskWeights weights,
+            double stalenessUrgency,
+            double pathQualityFactor) {
+
+        double baseRisk = baseRiskOf(
+                vulnerability,
+                weights,
+                stalenessUrgency);
+
+        double reachabilityWeight = reachabilityWeightFor(vulnerability, weights);
+
+        return baseRisk
+                * reachabilityWeight
+                * pathQualityFactor;
+    }
+
+    private double baseRiskOf(
+            Vulnerability vulnerability,
+            RiskWeights weights,
+            double stalenessUrgency) {
+
+        double cvssNorm = vulnerability.cvss().value() / CVSS_MAX_SCORE;
+
+        if (vulnerability.epss().isPresent()) {
+            double epssScore = vulnerability.epss().orElseThrow().value();
+
+            return (cvssNorm * weights.cvssWeight())
+                    + (epssScore * weights.epssWeight())
+                    + (stalenessUrgency * weights.stalenessWeight());
+        }
+
+        double availableWeight = weights.cvssWeight()
+                + weights.stalenessWeight();
+
+        if (availableWeight == 0.0) {
+            throw new IllegalStateException(
+                    "Cannot calculate base risk without EPSS when "
+                            + "CVSS and staleness weights are both zero.");
+        }
+
+        return ((cvssNorm * weights.cvssWeight())
+                + (stalenessUrgency * weights.stalenessWeight()))
+                / availableWeight;
+    }
+
+    private double reachabilityWeightFor(
+            Vulnerability vulnerability,
+            RiskWeights weights) {
+
+        return switch (reachabilityStatusFor(vulnerability)) {
+            case REACHABLE_CONFIRMED,
+                    REACHABLE_PROBABLE ->
+                weights.reachableWeight();
+
+            case UNKNOWN -> weights.unknownWeight();
+
+            case UNREACHABLE -> weights.unreachableWeight();
+        };
+    }
+
+    private ReachabilityStatus reachabilityStatusFor(
+            Vulnerability vulnerability) {
+
+        return reachabilityReports.stream()
+                .filter(report -> report.vulnerability().id().equals(vulnerability.id()))
+                .map(VulnerabilityReachability::status)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException(
+                        "Missing reachability report for vulnerability "
+                                + vulnerability.id().value()));
     }
 
     public double upgradeCost() {
@@ -174,11 +285,11 @@ public record RemediationCandidate(
             return Double.MAX_VALUE;
         }
 
-        CompatibilityStatus compat = compatibilityReport
+        CompatibilityStatus compatibility = compatibilityReport
                 .map(CompatibilityReport::status)
                 .orElse(CompatibilityStatus.UNKNOWN);
 
-        return switch (compat) {
+        return switch (compatibility) {
             case COMPATIBLE -> 1.0;
             case UNKNOWN -> 2.0;
             case SOURCE_INCOMPATIBLE -> 3.0;
@@ -187,39 +298,89 @@ public record RemediationCandidate(
     }
 
     public String stabilityReportSummary() {
-        StringBuilder sb = new StringBuilder();
+        StringBuilder summary = new StringBuilder();
 
-        currentStability.ifPresentOrElse(cs -> sb.append(
-                String.format("Current: TOOD=%d days, VersionLag=%d, LatestVersion=%s",
-                        cs.tood().value(), cs.versionLag().value(), cs.latestVersion())),
-                () -> sb.append("Current: no Goblin data"));
+        currentStability.ifPresentOrElse(
+                stability -> summary.append(
+                        String.format(
+                                "Current: TOOD=%d days, VersionLag=%d, LatestVersion=%s",
+                                stability.tood().value(),
+                                stability.versionLag().value(),
+                                stability.latestVersion())),
+                () -> summary.append("Current: no Goblin data"));
 
-        sb.append(" | ");
+        summary.append(" | ");
 
-        fixVersionStability.ifPresentOrElse(fs -> {
-            StabilityScore score = StabilityScore.ofFixVersion(fs);
-            sb.append(String.format(
-                    "Fix: StabilityScore=%.2f (AdoptionRate=%.0f%%, Lifespan=%.0f days, MaintenanceRate=%.4f rel/day)",
-                    score.value(),
-                    fs.adoptionRate().value() * 100,
-                    fs.adoptionLifespan().days(),
-                    fs.maintenanceRate().value()));
-        }, () -> sb.append("Fix: no Goblin data"));
+        fixVersionStability.ifPresentOrElse(
+                stability -> {
+                    StabilityScore score = StabilityScore.ofFixVersion(stability);
 
-        int pfet = pfetDays().value();
-        if (pfet > 0) {
-            sb.append(String.format(" | PFET=%d days", pfet));
-        }
+                    summary.append(
+                            String.format(
+                                    "Fix: StabilityScore=%.2f "
+                                            + "(AdoptionRate=%.0f%%, "
+                                            + "Lifespan=%.0f days, "
+                                            + "MaintenanceRate=%.4f rel/day)",
+                                    score.value(),
+                                    stability.adoptionRate().value() * 100,
+                                    stability.adoptionLifespan().days(),
+                                    stability.maintenanceRate().value()));
+                },
+                () -> summary.append("Fix: no Goblin data"));
 
-        upgradePathValidation.ifPresent(upv -> {
-            sb.append(" | Upgrade path: ");
-            sb.append(upv.isCleanPath() ? "CLEAN" : "HAS RISKS");
-            if (!upv.isCleanPath()) {
-                sb.append(String.format(" (%d new CVE(s))", upv.totalNewVulns()));
+        upgradePathValidation.ifPresent(validation -> {
+            summary.append(" | Upgrade path: ");
+            summary.append(
+                    validation.isCleanPath()
+                            ? "CLEAN"
+                            : "HAS RISKS");
+
+            if (!validation.isCleanPath()) {
+                summary.append(
+                        String.format(
+                                " (%d new CVE(s))",
+                                validation.totalNewVulns()));
             }
-            sb.append(String.format(" | netRiskDelta: %.2f", upv.netRiskDelta()));
+
+            validation.upgradePathSecuritySignal().ifPresent(signal -> summary.append(
+                    String.format(
+                            " | upgradePathSecuritySignal: %.2f",
+                            signal)));
         });
 
-        return sb.toString();
+        return summary.toString();
+    }
+
+    /**
+     * Ensures that every vulnerability has exactly one corresponding
+     * reachability result and that no unrelated results are present.
+     */
+    private static void validateReachabilityReports(
+            List<Vulnerability> vulnerabilities,
+            List<VulnerabilityReachability> reachabilityReports) {
+
+        Set<VulnerabilityId> vulnerabilityIds = vulnerabilities.stream()
+                .map(Vulnerability::id)
+                .collect(Collectors.toSet());
+
+        if (vulnerabilityIds.size() != vulnerabilities.size()) {
+            throw new IllegalArgumentException(
+                    "Vulnerabilities must have unique identifiers.");
+        }
+
+        Set<VulnerabilityId> reportedIds = reachabilityReports.stream()
+                .map(VulnerabilityReachability::vulnerability)
+                .map(Vulnerability::id)
+                .collect(Collectors.toSet());
+
+        if (reportedIds.size() != reachabilityReports.size()) {
+            throw new IllegalArgumentException(
+                    "Each vulnerability must have exactly one reachability report.");
+        }
+
+        if (!vulnerabilityIds.equals(reportedIds)) {
+            throw new IllegalArgumentException(
+                    "Each vulnerability must have exactly one reachability report.");
+        }
     }
 }

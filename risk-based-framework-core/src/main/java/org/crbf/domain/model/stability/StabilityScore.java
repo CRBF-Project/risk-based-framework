@@ -75,15 +75,18 @@ public record StabilityScore(double value) {
      * @return Urgency factor in [0.0, 1.0].
      */
     public static double stalenessUrgencyOf(EcosystemStability currentVersionStability) {
-        double toodNorm = Math.min(
-                currentVersionStability.tood().value() / MAX_URGENCY_TOOD_DAYS,
+        double timeLagNorm = Math.min(
+                currentVersionStability.tood().value()
+                        / MAX_URGENCY_TOOD_DAYS,
                 1.0);
 
-        double lagNorm = Math.min(
-                currentVersionStability.versionLag().value() / MAX_URGENCY_VERSION_LAG,
+        double versionLagNorm = Math.min(
+                currentVersionStability.versionLag().value()
+                        / MAX_URGENCY_VERSION_LAG,
                 1.0);
 
-        return toodNorm * 0.60 + lagNorm * 0.40;
+        return timeLagNorm * 0.60
+                + versionLagNorm * 0.40;
     }
 
 }
