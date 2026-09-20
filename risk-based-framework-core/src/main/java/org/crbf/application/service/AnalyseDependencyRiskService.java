@@ -30,6 +30,7 @@ import org.crbf.application.port.out.VulnerabilityLookupException;
 import org.crbf.domain.model.artifact.Artifact;
 import org.crbf.domain.model.artifact.DependencyPath;
 import org.crbf.domain.model.artifact.LocatedArtifact;
+import org.crbf.domain.model.artifact.Scope;
 import org.crbf.domain.model.artifact.TransitiveDepsResult;
 import org.crbf.domain.model.artifact.Version;
 import org.crbf.domain.model.compatibility.CompatibilityReport;
@@ -100,10 +101,8 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
 
                 Map<Artifact, LocatedArtifact> resolvedArtifacts = resolveAllArtifacts(uniqueArtifacts);
 
-                List<Path> allJarPaths = resolvedArtifacts.values().stream()
-                                .map(LocatedArtifact::physicalJarPath)
-                                .toList();
-                ProjectCallGraph callGraph = analyseReachabilityPort.buildCallGraph(classesPath, allJarPaths);
+                ProjectCallGraph callGraph = analyseReachabilityPort.buildCallGraph(
+                                classesPath, productionJarPaths(resolvedArtifacts));
 
                 List<RemediationCandidate> candidates = new ArrayList<>();
                 List<String> lookupFailures = new ArrayList<>();
@@ -306,6 +305,23 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                 }
 
                 return Collections.unmodifiableMap(resolved);
+        }
+
+        /**
+         * Returns the JARs that form the production classpath.
+         *
+         * <p>The call graph is rooted at the project's compiled production classes,
+         * so a test-scope dependency can only be reached through test code that is
+         * not part of the analysis. Keeping such a JAR in the scope would allow a
+         * path that does not exist in the deployed application to be reported as
+         * reachable. Test-scope artifacts remain in the dependency graph and are
+         * still scanned for vulnerabilities.
+         */
+        private List<Path> productionJarPaths(Map<Artifact, LocatedArtifact> resolvedArtifacts) {
+                return resolvedArtifacts.entrySet().stream()
+                                .filter(entry -> entry.getKey().scope() != Scope.TEST)
+                                .map(entry -> entry.getValue().physicalJarPath())
+                                .toList();
         }
 
         private Set<Artifact> extractUniqueArtifacts(List<DependencyPath> dependencyGraph) {

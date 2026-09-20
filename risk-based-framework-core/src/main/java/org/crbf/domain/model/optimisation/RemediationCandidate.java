@@ -5,6 +5,8 @@ import org.crbf.domain.model.compatibility.CompatibilityReport;
 import org.crbf.domain.model.compatibility.CompatibilityStatus;
 import org.crbf.domain.model.reachability.ReachabilityStatus;
 import org.crbf.domain.model.reachability.VulnerabilityReachability;
+import org.crbf.domain.model.risk.ContextualRisk;
+import org.crbf.domain.model.vulnerability.EpssScore;
 import org.crbf.domain.model.stability.EcosystemStability;
 import org.crbf.domain.model.stability.StabilityScore;
 import org.crbf.domain.model.vulnerability.AlternativeFix;
@@ -185,76 +187,50 @@ public record RemediationCandidate(
      * risk among the vulnerabilities affecting the artifact.
      */
     public double contextualRisk(RiskWeights weights) {
-        double stalenessUrgency = currentStability
-                .map(StabilityScore::stalenessUrgencyOf)
-                .orElse(0.5);
-
-        double pathQualityFactor = upgradePathValidation
-                .flatMap(UpgradePathValidation::upgradePathSecuritySignal)
-                .map(signal -> Math.max(
-                        PATH_QUALITY_FLOOR,
-                        PATH_QUALITY_MIDPOINT + signal * PATH_QUALITY_MIDPOINT))
-                .orElse(1.0);
-
         return vulnerabilities.stream()
-                .mapToDouble(vulnerability -> contextualRiskOf(
-                        vulnerability,
-                        weights,
-                        stalenessUrgency,
-                        pathQualityFactor))
+                .map(vulnerability -> contextualRiskFor(vulnerability, weights))
+                .mapToDouble(ContextualRisk::value)
                 .max()
                 .orElse(0.0);
     }
 
     /**
      * Computes contextual risk for one vulnerability, preserving the
-     * association between its CVSS, EPSS and reachability signals.
+     * association between its CVSS, EPSS and reachability signals, and
+     * returning the factors alongside the score so that a reader of the report
+     * can retrace how it was derived.
      */
-    private double contextualRiskOf(
+    public ContextualRisk contextualRiskFor(
             Vulnerability vulnerability,
-            RiskWeights weights,
-            double stalenessUrgency,
-            double pathQualityFactor) {
+            RiskWeights weights) {
 
-        double baseRisk = baseRiskOf(
-                vulnerability,
+        return ContextualRisk.of(
+                vulnerability.cvss().value() / CVSS_MAX_SCORE,
+                vulnerability.epss().map(EpssScore::value),
+                stalenessUrgency(),
                 weights,
-                stalenessUrgency);
-
-        double reachabilityWeight = reachabilityWeightFor(vulnerability, weights);
-
-        return baseRisk
-                * reachabilityWeight
-                * pathQualityFactor;
+                reachabilityStatusFor(vulnerability),
+                reachabilityWeightFor(vulnerability, weights),
+                pathQualityFactor());
     }
 
-    private double baseRiskOf(
-            Vulnerability vulnerability,
-            RiskWeights weights,
-            double stalenessUrgency) {
+    /**
+     * Staleness and path quality describe the artifact, not any single
+     * vulnerability, so both are the same for every vulnerability scored here.
+     */
+    private double stalenessUrgency() {
+        return currentStability
+                .map(StabilityScore::stalenessUrgencyOf)
+                .orElse(0.5);
+    }
 
-        double cvssNorm = vulnerability.cvss().value() / CVSS_MAX_SCORE;
-
-        if (vulnerability.epss().isPresent()) {
-            double epssScore = vulnerability.epss().orElseThrow().value();
-
-            return (cvssNorm * weights.cvssWeight())
-                    + (epssScore * weights.epssWeight())
-                    + (stalenessUrgency * weights.stalenessWeight());
-        }
-
-        double availableWeight = weights.cvssWeight()
-                + weights.stalenessWeight();
-
-        if (availableWeight == 0.0) {
-            throw new IllegalStateException(
-                    "Cannot calculate base risk without EPSS when "
-                            + "CVSS and staleness weights are both zero.");
-        }
-
-        return ((cvssNorm * weights.cvssWeight())
-                + (stalenessUrgency * weights.stalenessWeight()))
-                / availableWeight;
+    private double pathQualityFactor() {
+        return upgradePathValidation
+                .flatMap(UpgradePathValidation::upgradePathSecuritySignal)
+                .map(signal -> Math.max(
+                        PATH_QUALITY_FLOOR,
+                        PATH_QUALITY_MIDPOINT + signal * PATH_QUALITY_MIDPOINT))
+                .orElse(1.0);
     }
 
     private double reachabilityWeightFor(

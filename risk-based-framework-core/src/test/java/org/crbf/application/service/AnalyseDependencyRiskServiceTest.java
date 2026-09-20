@@ -2,6 +2,7 @@ package org.crbf.application.service;
 
 import static org.crbf.fixture.VulnerabilityFixture.vulnerability;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -24,15 +25,16 @@ import org.crbf.application.port.out.ResolveArtifactPort;
 import org.crbf.application.port.out.ResolveTransitiveDependenciesPort;
 import org.crbf.domain.model.artifact.Artifact;
 import org.crbf.domain.model.artifact.DependencyPath;
+import org.crbf.domain.model.artifact.LocatedArtifact;
 import org.crbf.domain.model.artifact.Scope;
 import org.crbf.domain.model.optimisation.RemediationCandidate;
 import org.crbf.domain.model.optimisation.RemediationPlan;
 import org.crbf.domain.model.reachability.ProjectCallGraph;
 import org.crbf.domain.model.reachability.ReachabilityStatus;
 import org.crbf.domain.model.vulnerability.Vulnerability;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import static org.mockito.ArgumentMatchers.any;
 
 class AnalyseDependencyRiskServiceTest {
 
@@ -40,76 +42,69 @@ class AnalyseDependencyRiskServiceTest {
     private static final double ANY_CVSS = 8.0;
     private static final double ANY_EPSS = 0.1;
 
-    @Test
-    void shouldAssignUnknownReachabilityWhenArtifactJarCannotBeResolved() {
-        ResolveArtifactPort resolveArtifactPort = mock(ResolveArtifactPort.class);
-        LoadVulnerabilitiesPort loadVulnerabilitiesPort = mock(LoadVulnerabilitiesPort.class);
-        LoadEpssScoresPort loadEpssScoresPort = mock(LoadEpssScoresPort.class);
-        LoadStabilityMetricsPort loadStabilityMetricsPort = mock(LoadStabilityMetricsPort.class);
-        AnalyseReachabilityPort analyseReachabilityPort = mock(AnalyseReachabilityPort.class);
-        DetectBreakingChangesPort detectBreakingChangesPort = mock(DetectBreakingChangesPort.class);
-        ResolveTransitiveDependenciesPort resolveTransitiveDependenciesPort = mock(ResolveTransitiveDependenciesPort.class);
-        OptimiseRemediationPort optimiseRemediationPort = mock(OptimiseRemediationPort.class);
-        RiskReportAssembler reportAssembler = mock(RiskReportAssembler.class);
-        ExportRiskReportPort exportRiskReportPort = mock(ExportRiskReportPort.class);
-        ExportVexPort exportVexPort = mock(ExportVexPort.class);
+    private static final Path PROJECT_PATH = Path.of(".");
+    private static final Path CLASSES_PATH = Path.of("target/classes");
 
-        Artifact root = Artifact.create(
-                "org.example",
-                "application",
-                "1.0.0",
-                Scope.COMPILE);
+    private static final Artifact ROOT = Artifact.create(
+            "org.example", "application", "1.0.0", Scope.COMPILE);
 
-        Artifact unresolvedArtifact = Artifact.create(
-                "org.example",
-                "library",
-                "1.0.0",
-                Scope.COMPILE);
+    private ResolveArtifactPort resolveArtifactPort;
+    private LoadVulnerabilitiesPort loadVulnerabilitiesPort;
+    private LoadEpssScoresPort loadEpssScoresPort;
+    private LoadStabilityMetricsPort loadStabilityMetricsPort;
+    private AnalyseReachabilityPort analyseReachabilityPort;
+    private OptimiseRemediationPort optimiseRemediationPort;
 
-        Vulnerability detectedVulnerability = vulnerability("CVE-0000-0001", ANY_CVSS, ANY_EPSS);
+    private AnalyseDependencyRiskService service;
 
-        when(resolveArtifactPort.resolve(
-                anyString(),
-                anyString(),
-                anyString(),
-                anyString()))
-                .thenReturn(Optional.empty());
+    @BeforeEach
+    void setUp() {
+        resolveArtifactPort = mock(ResolveArtifactPort.class);
+        loadVulnerabilitiesPort = mock(LoadVulnerabilitiesPort.class);
+        loadEpssScoresPort = mock(LoadEpssScoresPort.class);
+        loadStabilityMetricsPort = mock(LoadStabilityMetricsPort.class);
+        analyseReachabilityPort = mock(AnalyseReachabilityPort.class);
+        optimiseRemediationPort = mock(OptimiseRemediationPort.class);
 
-        when(loadVulnerabilitiesPort.loadVulnerabilities(unresolvedArtifact))
-                .thenReturn(List.of(detectedVulnerability));
-
-        when(loadEpssScoresPort.enrich(anyList()))
-                .thenReturn(List.of(detectedVulnerability));
-
-        when(loadStabilityMetricsPort.loadMetrics(unresolvedArtifact))
-                .thenReturn(Optional.empty());
-
-        when(analyseReachabilityPort.buildCallGraph(
-                any(),
-                anyList()))
+        when(analyseReachabilityPort.buildCallGraph(any(), anyList()))
                 .thenReturn(ProjectCallGraph.empty());
-
+        when(loadEpssScoresPort.enrich(anyList()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(loadStabilityMetricsPort.loadMetrics(any()))
+                .thenReturn(Optional.empty());
         when(optimiseRemediationPort.optimize(anyList()))
                 .thenReturn(RemediationPlan.empty());
 
-        AnalyseDependencyRiskService service = new AnalyseDependencyRiskService(
+        service = new AnalyseDependencyRiskService(
                 resolveArtifactPort,
                 loadVulnerabilitiesPort,
                 loadEpssScoresPort,
                 loadStabilityMetricsPort,
                 analyseReachabilityPort,
-                detectBreakingChangesPort,
-                resolveTransitiveDependenciesPort,
+                mock(DetectBreakingChangesPort.class),
+                mock(ResolveTransitiveDependenciesPort.class),
                 optimiseRemediationPort,
-                reportAssembler,
-                exportRiskReportPort,
-                exportVexPort);
+                mock(RiskReportAssembler.class),
+                mock(ExportRiskReportPort.class),
+                mock(ExportVexPort.class));
+    }
+
+    @Test
+    void shouldAssignUnknownReachabilityWhenArtifactJarCannotBeResolved() {
+        Artifact unresolvedArtifact = Artifact.create(
+                "org.example", "library", "1.0.0", Scope.COMPILE);
+
+        Vulnerability detectedVulnerability = vulnerability("CVE-0000-0001", ANY_CVSS, ANY_EPSS);
+
+        when(resolveArtifactPort.resolve(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(Optional.empty());
+        when(loadVulnerabilitiesPort.loadVulnerabilities(unresolvedArtifact))
+                .thenReturn(List.of(detectedVulnerability));
 
         service.analyse(
-                Path.of("."),
-                Path.of("target/classes"),
-                List.of(new DependencyPath(
-                        List.of(root, unresolvedArtifact))));
+                PROJECT_PATH,
+                CLASSES_PATH,
+                List.of(new DependencyPath(List.of(ROOT, unresolvedArtifact))));
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<RemediationCandidate>> candidates = ArgumentCaptor.forClass(List.class);
@@ -117,5 +112,42 @@ class AnalyseDependencyRiskServiceTest {
 
         RemediationCandidate candidate = candidates.getValue().get(0);
         assertEquals(ReachabilityStatus.UNKNOWN, candidate.reachabilityReports().get(0).status());
+    }
+
+    @Test
+    void shouldExcludeTestScopeJarsFromTheCallGraphScope() {
+        Artifact compileDependency = Artifact.create(
+                "org.example", "library", "1.0.0", Scope.COMPILE);
+        Artifact testDependency = Artifact.create(
+                "org.example", "test-library", "1.0.0", Scope.TEST);
+
+        Path compileJar = Path.of("/repo/library-1.0.0.jar");
+        Path testJar = Path.of("/repo/test-library-1.0.0.jar");
+
+        stubResolution(compileDependency, compileJar);
+        stubResolution(testDependency, testJar);
+
+        when(loadVulnerabilitiesPort.loadVulnerabilities(any()))
+                .thenReturn(List.of());
+
+        service.analyse(
+                PROJECT_PATH,
+                CLASSES_PATH,
+                List.of(new DependencyPath(List.of(ROOT, compileDependency, testDependency))));
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<Path>> scopeJars = ArgumentCaptor.forClass(List.class);
+        verify(analyseReachabilityPort).buildCallGraph(any(), scopeJars.capture());
+
+        assertEquals(List.of(compileJar), scopeJars.getValue());
+    }
+
+    private void stubResolution(Artifact artifact, Path jarPath) {
+        when(resolveArtifactPort.resolve(
+                artifact.groupId().value(),
+                artifact.artifactId().value(),
+                artifact.version().value(),
+                artifact.scope().name()))
+                .thenReturn(Optional.of(new LocatedArtifact(artifact, jarPath)));
     }
 }

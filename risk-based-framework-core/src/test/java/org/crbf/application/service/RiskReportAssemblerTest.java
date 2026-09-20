@@ -2,6 +2,7 @@ package org.crbf.application.service;
 
 import static org.crbf.fixture.RemediationCandidateFixture.withFix;
 import static org.crbf.fixture.VulnerabilityFixture.vulnerability;
+import static org.crbf.fixture.VulnerabilityFixture.vulnerabilityWithoutEpss;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.nio.file.Path;
@@ -17,6 +18,7 @@ import org.crbf.domain.model.optimisation.RemediationDecision;
 import org.crbf.domain.model.optimisation.RemediationPlan;
 import org.crbf.domain.model.reachability.ReachabilityStatus;
 import org.crbf.domain.model.reachability.VulnerabilityReachability;
+import org.crbf.domain.model.risk.ContextualRisk;
 import org.crbf.domain.model.vulnerability.Vulnerability;
 import org.junit.jupiter.api.Test;
 
@@ -150,6 +152,64 @@ class RiskReportAssemblerTest {
                 candidate.contextualRisk(),
                 finding.contextualRisk(),
                 TOLERANCE);
+    }
+
+    @Test
+    void reportedContextualRiskShouldBeReconstructibleFromTheFactorsPublishedWithIt() {
+        Vulnerability vulnerability = vulnerability("CVE-2026-0001", 8.0, 0.80);
+
+        RemediationCandidate candidate = withFix(List.of(
+                new VulnerabilityReachability(
+                        vulnerability,
+                        ReachabilityStatus.REACHABLE_CONFIRMED,
+                        Set.of(),
+                        Set.of())));
+
+        ContextualRisk risk = assembleSingleFindingRisk(candidate);
+
+        double reconstructed = (risk.cvssNormalized() * risk.effectiveCvssWeight()
+                + risk.epss().orElse(0.0) * risk.effectiveEpssWeight()
+                + risk.stalenessUrgency() * risk.effectiveStalenessWeight())
+                * risk.reachabilityFactor()
+                * risk.pathQualityFactor();
+
+        assertEquals(risk.value(), reconstructed, TOLERANCE);
+    }
+
+    @Test
+    void reportedWeightsShouldBeRenormalisedWhenNoEpssScoreExists() {
+        Vulnerability vulnerability = vulnerabilityWithoutEpss("CVE-2026-0002", 8.0);
+
+        RemediationCandidate candidate = withFix(List.of(
+                new VulnerabilityReachability(
+                        vulnerability,
+                        ReachabilityStatus.REACHABLE_CONFIRMED,
+                        Set.of(),
+                        Set.of())));
+
+        ContextualRisk risk = assembleSingleFindingRisk(candidate);
+
+        // The EPSS weight is redistributed over the signals that were observed,
+        // so the weights the report publishes still describe a complete
+        // calculation rather than the configured 0.50/0.30/0.20.
+        assertEquals(
+                1.0,
+                risk.effectiveCvssWeight()
+                        + risk.effectiveEpssWeight()
+                        + risk.effectiveStalenessWeight(),
+                TOLERANCE);
+    }
+
+    private ContextualRisk assembleSingleFindingRisk(RemediationCandidate candidate) {
+        RiskReport report = new RiskReportAssembler().assemble(
+                Path.of("test-project"),
+                List.of(),
+                Set.of(candidate.artifact()),
+                List.of(candidate),
+                RemediationPlan.empty(),
+                List.of());
+
+        return report.findings().get(0).vulnerabilities().get(0).contextualRisk();
     }
 
     private static final double TOLERANCE = 1e-9;

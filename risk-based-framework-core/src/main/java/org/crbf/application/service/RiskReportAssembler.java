@@ -29,6 +29,7 @@ import org.crbf.domain.model.optimisation.RemediationCandidate;
 import org.crbf.domain.model.optimisation.RemediationDecision;
 import org.crbf.domain.model.optimisation.RemediationPlan;
 import org.crbf.domain.model.optimisation.RiskWeights;
+import org.crbf.domain.model.risk.ContextualRisk;
 import org.crbf.domain.model.vulnerability.AlternativeFix;
 import org.crbf.domain.model.vulnerability.Vulnerability;
 import org.crbf.application.model.report.AlternativeFixSummary;
@@ -107,20 +108,24 @@ public class RiskReportAssembler {
                 return new ArtifactFinding(
                                 candidate.artifact().gav(),
                                 candidate.contextualRisk(riskWeights),
-                                toCveSummaries(candidate.vulnerabilities()),
+                                toCveSummaries(candidate),
                                 toReachabilitySummary(candidate),
                                 toCompatibilitySummary(candidate.compatibilityReport()),
                                 toRemediationSummary(candidate, decision),
                                 candidate.stabilityReportSummary());
         }
 
-        private List<CveSummary> toCveSummaries(List<Vulnerability> vulnerabilities) {
-                return vulnerabilities.stream()
-                                .map(this::toCveSummary)
+        /**
+         * The risk factors are taken from the candidate rather than recomputed
+         * here, so the report cannot drift from the score the optimiser used.
+         */
+        private List<CveSummary> toCveSummaries(RemediationCandidate candidate) {
+                return candidate.vulnerabilities().stream()
+                                .map(v -> toCveSummary(v, candidate.contextualRiskFor(v, riskWeights)))
                                 .toList();
         }
 
-        private CveSummary toCveSummary(Vulnerability v) {
+        private CveSummary toCveSummary(Vulnerability v, ContextualRisk contextualRisk) {
                 return new CveSummary(
                                 v.id().value(),
                                 v.severity().name(),
@@ -132,7 +137,8 @@ public class RiskReportAssembler {
                                 v.advisoryUrl(),
                                 v.fixCommitUrl(),
                                 v.published().map(Instant::toString).orElse(null),
-                                v.modified().map(Instant::toString).orElse(null));
+                                v.modified().map(Instant::toString).orElse(null),
+                                contextualRisk);
         }
 
         private ReachabilitySummary toReachabilitySummary(RemediationCandidate candidate) {
