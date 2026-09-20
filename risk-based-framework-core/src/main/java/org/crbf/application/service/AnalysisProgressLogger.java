@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 import java.util.Optional;
 import org.crbf.domain.model.optimisation.UpgradePathStatus;
@@ -19,6 +20,9 @@ import org.crbf.domain.model.optimisation.UpgradePathStatus;
 public class AnalysisProgressLogger {
 
     private static final Logger LOG = LoggerFactory.getLogger(AnalysisProgressLogger.class);
+
+    /** Logged in place of a metric the ecosystem data source did not report. */
+    private static final String UNAVAILABLE = "unavailable";
 
     public void logAnalysisStart(String projectPath) {
         LOG.info("\n[Application] Starting the Contextualised Risk-Based Framework...");
@@ -131,17 +135,25 @@ public class AnalysisProgressLogger {
         LOG.info("  │  Latest:     {}", s.latestVersion());
         LOG.info("  │  TOOD:       {} days", s.tood().value());
         LOG.info("  │  VersionLag: {} releases", s.versionLag().value());
-        LOG.info("  │  Adoption:   {}%", String.format("%.0f", s.adoptionRate().value() * 100));
-        LOG.info("  │  Maint Rate: {} rel/day", String.format("%.4f", s.maintenanceRate().value()));
-        LOG.info("  │  Urgency:    {}", String.format("%.2f", StabilityScore.stalenessUrgencyOf(s)));
+        LOG.info("  │  Adoption:   {}", adoptionPercentage(s));
+        LOG.info("  │  Maint Rate: {}", s.maintenanceRate()
+                .map(rate -> String.format(Locale.ROOT, "%.4f rel/day", rate.value()))
+                .orElse(UNAVAILABLE));
+        LOG.info("  │  Urgency:    {}", String.format(Locale.ROOT, "%.2f", StabilityScore.stalenessUrgencyOf(s)));
         LOG.info("  └────────────────────────────────────────");
     }
 
     public void logStabilityLoaded(String label, Artifact artifact, EcosystemStability s) {
-        LOG.info("  [Goblin/{}] {} — TOOD: {} days, Lag: {}, Adoption: {}%",
+        LOG.info("  [Goblin/{}] {} — TOOD: {} days, Lag: {}, Adoption: {}",
                 label, artifact.gav(),
                 s.tood().value(), s.versionLag().value(),
-                String.format("%.0f", s.adoptionRate().value() * 100));
+                adoptionPercentage(s));
+    }
+
+    private static String adoptionPercentage(EcosystemStability s) {
+        return s.adoptionRate()
+                .map(rate -> String.format(Locale.ROOT, "%.2f%%", rate.value() * 100))
+                .orElse(UNAVAILABLE);
     }
 
     public void logStabilityFailed(String label, String gav, String reason) {
@@ -173,7 +185,7 @@ public class AnalysisProgressLogger {
             UpgradePathStatus status,
             Optional<Double> securitySignal) {
 
-        String signal = securitySignal.map(value -> String.format("%.2f", value)).orElse("unavailable");
+        String signal = securitySignal.map(value -> String.format(Locale.ROOT, "%.2f", value)).orElse("unavailable");
         LOG.info("  [UpgradeValidation] Path status: {} | Security signal: {}", status, signal);
     }
 
@@ -208,8 +220,8 @@ public class AnalysisProgressLogger {
             LOG.info("\n  ── RECOMMENDED UPGRADES ──");
             upgrades.forEach(d -> {
                 LOG.info("\n  ✔ UPGRADE  {} → {}", d.artifact().gav(), d.targetVersion());
-                LOG.info("    Risk Reduction : {}", String.format("%.2f", d.riskReduction()));
-                LOG.info("    Effort Cost    : {} units", String.format("%.1f", d.effortCost()));
+                LOG.info("    Risk Reduction : {}", String.format(Locale.ROOT, "%.2f", d.riskReduction()));
+                LOG.info("    Effort Cost    : {} units", String.format(Locale.ROOT, "%.1f", d.effortCost()));
                 LOG.info("    Rationale      : {}", d.rationale());
             });
         }
@@ -223,9 +235,9 @@ public class AnalysisProgressLogger {
         }
 
         LOG.info("\n  ── SUMMARY ──");
-        LOG.info("  Total Risk Reduction : {}", String.format("%.2f", plan.totalRiskReduction()));
-        LOG.info("  Residual Risk        : {}", String.format("%.2f", plan.totalResidualRisk()));
-        LOG.info("  Total Effort Used    : {} units", String.format("%.1f", plan.totalEffortCost()));
+        LOG.info("  Total Risk Reduction : {}", String.format(Locale.ROOT, "%.2f", plan.totalRiskReduction()));
+        LOG.info("  Residual Risk        : {}", String.format(Locale.ROOT, "%.2f", plan.totalResidualRisk()));
+        LOG.info("  Total Effort Used    : {} units", String.format(Locale.ROOT, "%.1f", plan.totalEffortCost()));
         LOG.info("═══════════════════════════════════════════════════════════════════");
     }
 

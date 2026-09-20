@@ -100,14 +100,20 @@ public class CycloneDxVexAdapter implements ExportVexPort {
                 analysis.setState(
                         Vulnerability.Analysis.State.EXPLOITABLE);
                 analysis.setDetail(
-                        "The vulnerable code is reachable from the analysed project.");
+                        "Static call-graph analysis confirms the vulnerable class is invoked "
+                                + "from the analysed project; exploitability was not otherwise validated.");
             }
 
+            // The library is called, but the advisory does not name the vulnerable
+            // class, so the analysis cannot say whether it is reached. IN_TRIAGE
+            // states that the question is open; EXPLOITABLE would assert an
+            // exploitable vulnerability that the evidence does not support.
             case REACHABLE_PROBABLE -> {
                 analysis.setState(
-                        Vulnerability.Analysis.State.EXPLOITABLE);
+                        Vulnerability.Analysis.State.IN_TRIAGE);
                 analysis.setDetail(
-                        "The vulnerable artifact is reachable, but the specific vulnerable code could not be confirmed.");
+                        "The vulnerable artifact is reachable, but the advisory does not identify "
+                                + "the vulnerable class, so exploitability could neither be confirmed nor excluded.");
             }
 
             case UNREACHABLE -> {

@@ -215,6 +215,10 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                 VulnerableArtifact vulnerableArtifact = new VulnerableArtifact(artifact, enrichedVulns);
                 logger.logVulnerableArtifact(vulnerableArtifact.gav(), enrichedVulns.size());
 
+                List<VulnerabilityReachability> unknownReachability = enrichedVulns.stream()
+                        .map(VulnerabilityReachability::unknown)
+                        .toList();
+
                 Optional<EcosystemStability> currentStability = loadStabilityMetrics(artifact, false);
                 currentStability.ifPresent(s -> logger.logStability(artifact, s, "Current"));
 
@@ -229,7 +233,7 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                         fixStability.ifPresent(s -> logger.logStability(fixArtifact, s, "Fix version"));
 
                         return Optional.of(new RemediationCandidate(
-                                        artifact, enrichedVulns, List.of(),
+                                        artifact, enrichedVulns, unknownReachability,
                                         validation.compatibilityReport(),
                                         Optional.of(validation.proposedVersion()),
                                         Optional.empty(),
@@ -237,7 +241,7 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                 }
 
                 return Optional.of(new RemediationCandidate(
-                                artifact, enrichedVulns, List.of(),
+                                artifact, enrichedVulns, unknownReachability,
                                 Optional.empty(), Optional.empty(),
                                 vulnerableArtifact.requiredAlternativeFix(),
                                 currentStability, Optional.empty(), Optional.empty()));

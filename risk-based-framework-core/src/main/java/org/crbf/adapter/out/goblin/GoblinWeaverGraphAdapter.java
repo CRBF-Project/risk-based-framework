@@ -90,7 +90,7 @@ public class GoblinWeaverGraphAdapter implements ResolveTransitiveDependenciesPo
                         GoblinWeaverTraversingResponse response = post(TRAVERSING_ENDPOINT, request,
                                         GoblinWeaverTraversingResponse.class);
 
-                        TransitiveDepsResult result = graphMapper.toDomainWithCves(response);
+                        TransitiveDepsResult result = graphMapper.toDomainWithCves(response, Set.of(artifact.gav()));
 
                         LOG.debug("Resolved {} transitive deps for {} ({} with CVEs)",
                                         result.allDeps().size(), artifact.gav(), result.vulnerableDeps().size());
@@ -120,7 +120,7 @@ public class GoblinWeaverGraphAdapter implements ResolveTransitiveDependenciesPo
                         GoblinWeaverTraversingResponse response = post(TRAVERSING_ENDPOINT, request,
                                         GoblinWeaverTraversingResponse.class);
 
-                        TransitiveDepsResult result = graphMapper.toDomainWithCves(response);
+                        TransitiveDepsResult result = graphMapper.toDomainWithCves(response, gavs);
 
                         LOG.debug("Global graph: {} total deps, {} with CVEs across {} fix versions",
                                         result.allDeps().size(), result.vulnerableDeps().size(), gavs.size());

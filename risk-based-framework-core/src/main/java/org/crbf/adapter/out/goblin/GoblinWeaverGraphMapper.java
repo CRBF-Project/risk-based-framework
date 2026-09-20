@@ -27,13 +27,39 @@ class GoblinWeaverGraphMapper {
                 .collect(Collectors.toSet());
     }
 
-    TransitiveDepsResult toDomainWithCves(GoblinWeaverTraversingResponse response) {
+    /**
+     * @param rootGavs the releases the traversal started from. A root that has
+     *                 no node in the response is not present in the ecosystem
+     *                 graph at all — typically a release published after the
+     *                 graph snapshot was taken. The traversal then returns an
+     *                 empty neighbourhood, which must not be read as "this
+     *                 release has no vulnerable dependencies".
+     */
+    TransitiveDepsResult toDomainWithCves(
+            GoblinWeaverTraversingResponse response, Set<String> rootGavs) {
+
         if (response == null) return TransitiveDepsResult.unavailable();
 
         Set<Artifact> allDeps = toDomain(response);
 
         if (response.nodes() == null) {
             return new TransitiveDepsResult(allDeps, List.of(), true);
+        }
+
+        Set<String> resolvedReleaseIds = response.nodes().stream()
+                .filter(node -> "RELEASE".equals(node.nodeType()))
+                .map(GoblinWeaverTraversingResponse.GoblinTraversingNodeDto::id)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        List<String> missingRoots = rootGavs.stream()
+                .filter(gav -> !resolvedReleaseIds.contains(gav))
+                .toList();
+
+        if (!missingRoots.isEmpty()) {
+            LOG.warn("{} not present in the ecosystem graph; transitive data reported as unavailable",
+                    missingRoots);
+            return TransitiveDepsResult.unavailable();
         }
 
         List<Artifact> vulnerableDeps = response.nodes().stream()

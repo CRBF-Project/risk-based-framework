@@ -944,17 +944,20 @@
     // ─── Stability ─────────────────────────────────────────────────────────────
     function parseStability(s) {
       if (!s) return null;
-      const get = re => { const m = s.match(re); return m ? m[1] : null; };
+      // Reports written under a locale that uses the comma as the decimal
+      // separator must still parse: "0,85" captured as "0" would render a
+      // measured value as zero.
+      const get = re => { const m = s.match(re); return m ? m[1].replace(',', '.') : null; };
       return {
         tood: get(/TOOD=(\d+)/),
         versionLag: get(/VersionLag=(\d+)/),
         latestVersion: get(/LatestVersion=([\w.\-]+)/),
-        stabilityScore: get(/StabilityScore=([\d.]+)/),
-        adoptionRate: get(/AdoptionRate=([\d.]+%)/),
+        stabilityScore: get(/StabilityScore=([\d.,]+)/),
+        adoptionRate: get(/AdoptionRate=([\d.,]+%)/),
         lifespan: get(/Lifespan=(\d+)/),
-        maintenanceRate: get(/MaintenanceRate=([\d.]+)/),
+        maintenanceRate: get(/MaintenanceRate=([\d.,]+)/),
         upgradePath: get(/Upgrade path:\s*([A-Z_]+)/),
-        upgradePathSecuritySignal: get(/upgradePathSecuritySignal:\s*([\d.]+)/),
+        upgradePathSecuritySignal: get(/upgradePathSecuritySignal:\s*([\d.,]+)/),
       };
     }
     function renderStability(summary, fixVersion, currentVersion) {
@@ -1215,13 +1218,18 @@
         }
 
         // Reachability note
+        // Reachability reports call-graph evidence only. Priority follows from the
+        // contextual risk and the optimiser's decision, which weigh severity,
+        // exploitability and whether a fix exists at all — none of which this
+        // panel can see. Telling the reader to "upgrade immediately" here
+        // contradicts the DEFER badge on an artifact that has no fix.
         let reachNote = '';
         if (rs === 'UNREACHABLE') {
-          reachNote = `<div class="note info"><strong>Vulnerable code is not reachable from your application</strong>Static call graph analysis found no execution path from your code to the vulnerable library classes. Risk is low, but upgrading is still recommended for hygiene purposes.</div>`;
+          reachNote = `<div class="note info"><strong>Vulnerable code is not reachable from your application</strong>Static call graph analysis found no execution path from your code to the vulnerable library classes.</div>`;
         } else if (rs === 'REACHABLE_CONFIRMED') {
-          reachNote = `<div class="note warn"><strong>&#9888; Vulnerable class is directly invoked</strong>The call graph confirms your application reaches the specific vulnerable class. Exploit is feasible &mdash; upgrade immediately.</div>`;
+          reachNote = `<div class="note warn"><strong>&#9888; Vulnerable class is directly invoked</strong>The call graph confirms your application reaches the specific vulnerable class, so the vulnerable code is exercised.</div>`;
         } else if (rs === 'REACHABLE_PROBABLE') {
-          reachNote = `<div class="note warn"><strong>&#9888; Classes from the vulnerable library are in use</strong>Your application calls classes from this library. The specific vulnerable class was not identified in the CVE description, but exploitability is probable. Treat as high priority.</div>`;
+          reachNote = `<div class="note warn"><strong>&#9888; Classes from the vulnerable library are in use</strong>Your application calls classes from this library. The CVE description does not identify the specific vulnerable class, so exploitability could neither be confirmed nor excluded.</div>`;
         }
 
         const cveHtml = vl.map(buildCveCard).join('');
@@ -1290,7 +1298,9 @@
       const labels = {
         CLEAN: '&#10003; Clean &mdash; no new vulnerable transitive dependencies',
         HAS_RISKS: '&#9888; Risks detected &mdash; new vulnerable dependencies found',
-        UNAVAILABLE: 'Unavailable &mdash; graph service not reachable',
+        // Either the graph service could not be reached, or a fix version is
+        // absent from it. Both leave the combined upgrade unvalidated.
+        UNAVAILABLE: 'Not validated &mdash; fix versions absent from the ecosystem graph, or graph service unreachable',
         NOT_RUN: 'Not run',
       };
       let html = `<div class="gv-status ${gvSt}">${labels[gvSt] ?? esc(gvSt)}</div>`;

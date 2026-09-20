@@ -1,5 +1,7 @@
 package org.crbf.domain.model.stability;
 
+import java.util.Optional;
+
 /**
  * A normalised [0.0 – 1.0] score that represents the "upgrade stability
  * confidence" for a candidate fix version
@@ -34,30 +36,44 @@ public record StabilityScore(double value) {
     /**
      * Computes the stability confidence for a candidate fix version.
      *
+     * <p>The score is only defined when every component was actually measured.
+     * A missing component is not read as zero confidence, because the score
+     * would then report an unreachable data source as an unadopted release.
+     *
      * @param fixVersionStability Goblin metrics for the proposed fix version.
-     * @return Normalised stability confidence in [0.0, 1.0].
+     * @return Normalised stability confidence in [0.0, 1.0], or
+     *         {@link Optional#empty()} when any component is unavailable.
      */
-    public static StabilityScore ofFixVersion(EcosystemStability fixVersionStability) {
-        double adoptionRate = fixVersionStability.adoptionRate().value();
+    public static Optional<StabilityScore> ofFixVersion(EcosystemStability fixVersionStability) {
+        Optional<AdoptionRate> adoption = fixVersionStability.adoptionRate();
+        Optional<MaintenanceRate> maintenance = fixVersionStability.maintenanceRate();
+        Optional<AdoptionLifespan> lifespan = fixVersionStability.adoptionLifespan();
+
+        if (adoption.isEmpty() || maintenance.isEmpty() || lifespan.isEmpty()) {
+            return Optional.empty();
+        }
+
+        double adoptionRate = adoption.get().value();
 
         double maintenanceNorm = Math.min(
-                fixVersionStability.maintenanceRate().value() / ACTIVE_MAINTENANCE_THRESHOLD,
+                maintenance.get().value() / ACTIVE_MAINTENANCE_THRESHOLD,
                 1.0);
 
         double lifespanNorm = Math.min(
-                fixVersionStability.adoptionLifespan().days() / TARGET_ADOPTION_LIFESPAN_DAYS,
+                lifespan.get().days() / TARGET_ADOPTION_LIFESPAN_DAYS,
                 1.0);
 
         double score = adoptionRate * 0.55
                 + maintenanceNorm * 0.30
                 + lifespanNorm * 0.15;
 
-        return new StabilityScore(Math.max(0.0, Math.min(score, 1.0)));
+        return Optional.of(new StabilityScore(Math.max(0.0, Math.min(score, 1.0))));
     }
 
     /**
-     * Returns a neutral score (0.5) used when Goblin data is unavailable.
-     * This conservative estimate avoids penalising or rewarding unknown artifacts.
+     * A midpoint fallback (0.5) used when ecosystem stability data is
+     * unavailable. It is not an observed measurement and must not be reported
+     * as one.
      */
     public static StabilityScore unknown() {
         return new StabilityScore(0.5);

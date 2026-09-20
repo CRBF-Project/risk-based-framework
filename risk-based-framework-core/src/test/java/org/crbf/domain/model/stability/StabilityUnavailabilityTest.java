@@ -2,6 +2,7 @@ package org.crbf.domain.model.stability;
 
 import static org.crbf.fixture.VulnerabilityFixture.vulnerability;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Optional;
@@ -26,7 +27,12 @@ class StabilityUnavailabilityTest {
 
     private static final double NEUTRAL_STALENESS = 0.5;
     private static final double NO_STALENESS = 0.0;
+    private static final double MIDPOINT_CONFIDENCE = 0.5;
+    private static final double NO_CONFIDENCE = 0.0;
     private static final double TOLERANCE = 1e-9;
+
+    /** A metric the ecosystem data source did not report at all. */
+    private static final Double UNREPORTED = null;
 
     private static final double CVSS_SCORE = 8.0;
     private static final double CVSS_MAX_SCORE = 10.0;
@@ -76,8 +82,17 @@ class StabilityUnavailabilityTest {
     }
 
     @Test
-    @DisplayName("Unknown fix stability is neutral, not zero confidence")
-    void unknownFixStabilityIsNeutral() {
+    @DisplayName("Unavailable stability falls back to the midpoint, not to zero confidence")
+    void unavailableStabilityUsesMidpointFallback() {
+        assertEquals(
+                MIDPOINT_CONFIDENCE,
+                StabilityScore.unknown().value(),
+                TOLERANCE);
+    }
+
+    @Test
+    @DisplayName("A fix version measured as unadopted scores zero confidence")
+    void measuredUnadoptedFixVersionScoresZeroConfidence() {
         EcosystemStability unadopted = EcosystemStability.create(
                 FIX_VERSION,
                 NO_TIME_LAG_DAYS,
@@ -88,14 +103,24 @@ class StabilityUnavailabilityTest {
                 UNSET_RELEASE_TIMESTAMP);
 
         assertEquals(
-                NEUTRAL_STALENESS,
-                StabilityScore.unknown().value(),
+                NO_CONFIDENCE,
+                StabilityScore.ofFixVersion(unadopted).orElseThrow().value(),
                 TOLERANCE);
+    }
 
-        assertEquals(
-                NO_STALENESS,
-                StabilityScore.ofFixVersion(unadopted).value(),
-                TOLERANCE);
+    @Test
+    @DisplayName("A fix version with unreported adoption has no stability score")
+    void unreportedAdoptionYieldsNoStabilityScore() {
+        EcosystemStability unreported = EcosystemStability.create(
+                FIX_VERSION,
+                NO_TIME_LAG_DAYS,
+                NO_VERSION_LAG,
+                UNREPORTED,
+                NO_LIFESPAN,
+                NO_MAINTENANCE,
+                UNSET_RELEASE_TIMESTAMP);
+
+        assertTrue(StabilityScore.ofFixVersion(unreported).isEmpty());
     }
 
     private static double expectedContextualRisk(double stalenessUrgency) {

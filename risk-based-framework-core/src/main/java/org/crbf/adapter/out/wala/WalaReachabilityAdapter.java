@@ -3,7 +3,7 @@ package org.crbf.adapter.out.wala;
 import com.ibm.wala.classLoader.IClass;
 import com.ibm.wala.classLoader.IMethod;
 import com.ibm.wala.classLoader.Language;
-import com.ibm.wala.core.util.config.AnalysisScopeReader;
+import com.ibm.wala.core.java11.Java9AnalysisScopeReader;
 import com.ibm.wala.ipa.callgraph.AnalysisCacheImpl;
 import com.ibm.wala.ipa.callgraph.AnalysisOptions;
 import com.ibm.wala.ipa.callgraph.AnalysisScope;
@@ -63,6 +63,10 @@ import java.util.stream.Collectors;
 public class WalaReachabilityAdapter implements AnalyseReachabilityPort {
 
         private static final Logger LOG = LoggerFactory.getLogger(WalaReachabilityAdapter.class);
+
+
+        /** Entry point of a Java application, as declared by the JVM specification. */
+        private static final String MAIN_METHOD = "main";
 
         // Matches CamelCase Java class name tokens in CVE text, e.g. "JndiLookup",
         // "StringSubstitutor", "XStream".
@@ -247,9 +251,15 @@ public class WalaReachabilityAdapter implements AnalyseReachabilityPort {
                         throws Exception {
 
                 java.io.File exclusionsFile = writeExclusionsFile();
-                AnalysisScope scope = AnalysisScopeReader.instance.makePrimordialScope(exclusionsFile);
 
-                AnalysisScopeReader.instance.addClassPathToScope(
+                // The default primordial scope was designed for the Java 8 rt.jar. From
+                // Java 9 onwards the standard library is a module image, so the JDK
+                // classes must be read through the jrt file system; otherwise the class
+                // hierarchy is missing java.base and virtual calls into it resolve to
+                // nothing.
+                AnalysisScope scope = Java9AnalysisScopeReader.instance.makePrimordialScope(exclusionsFile);
+
+                Java9AnalysisScopeReader.instance.addClassPathToScope(
                                 projectClassesPath.toAbsolutePath().toString(),
                                 scope,
                                 scope.getApplicationLoader());
@@ -262,7 +272,7 @@ public class WalaReachabilityAdapter implements AnalyseReachabilityPort {
                         }
 
                         try {
-                                AnalysisScopeReader.instance.addClassPathToScope(
+                                Java9AnalysisScopeReader.instance.addClassPathToScope(
                                                 jarPath.toAbsolutePath().toString(),
                                                 scope,
                                                 scope.getExtensionLoader());
@@ -292,6 +302,9 @@ public class WalaReachabilityAdapter implements AnalyseReachabilityPort {
                 }
 
                 AnalysisOptions options = new AnalysisOptions(scope, entryPoints);
+
+                options.setReflectionOptions(AnalysisOptions.ReflectionOptions.NO_FLOW_TO_CASTS_NO_METHOD_INVOKE);
+
                 IAnalysisCacheView cache = new AnalysisCacheImpl();
                 CallGraphBuilder<InstanceKey> builder = Util.makeZeroCFABuilder(
                                 Language.JAVA, options, cache, cha);
@@ -350,7 +363,37 @@ public class WalaReachabilityAdapter implements AnalyseReachabilityPort {
          * classes as 0-CFA entry points.
          */
         private Set<Entrypoint> collectEntryPoints(AnalysisScope scope, IClassHierarchy cha) {
-                Set<Entrypoint> entryPoints = new HashSet<>();
+                List<IMethod> applicationMethods = applicationMethods(scope, cha);
+
+                // An application is exercised through its main methods, and reachability
+                // measured from them reflects what the program actually runs. Treating
+                // every public method as an entry point instead assumes each one may be
+                // called, which over-approximates reachability; it is the only option
+                // for a library, which has no entry point of its own.
+                List<IMethod> mainMethods = applicationMethods.stream()
+                                .filter(WalaReachabilityAdapter::isMainMethod)
+                                .toList();
+
+                List<IMethod> selected = mainMethods.isEmpty()
+                                ? applicationMethods.stream()
+                                        .filter(method -> method.isPublic() || method.isProtected())
+                                        .toList()
+                                : mainMethods;
+
+                LOG.info("Call graph entry points: {} ({})",
+                                selected.size(),
+                                mainMethods.isEmpty()
+                                        ? "no main method found — using all public application methods, "
+                                                + "which over-approximates reachability"
+                                        : "main method(s)");
+
+                return selected.stream()
+                                .map(method -> (Entrypoint) new ArgumentTypeEntrypoint(method, cha))
+                                .collect(Collectors.toCollection(HashSet::new));
+        }
+
+        private List<IMethod> applicationMethods(AnalysisScope scope, IClassHierarchy cha) {
+                List<IMethod> methods = new ArrayList<>();
 
                 for (IClass klass : cha) {
                         if (klass.isInterface()) {
@@ -360,13 +403,20 @@ public class WalaReachabilityAdapter implements AnalyseReachabilityPort {
                                 continue;
                         }
                         for (IMethod method : klass.getDeclaredMethods()) {
-                                if (!method.isAbstract() && (method.isPublic() || method.isProtected())) {
-                                        entryPoints.add(new ArgumentTypeEntrypoint(method, cha));
+                                if (!method.isAbstract()) {
+                                        methods.add(method);
                                 }
                         }
                 }
 
-                return entryPoints;
+                return methods;
+        }
+
+        private static boolean isMainMethod(IMethod method) {
+                return method.isStatic()
+                                && method.isPublic()
+                                && MAIN_METHOD.equals(method.getName().toString())
+                                && method.getDescriptor().toString().equals("([Ljava/lang/String;)V");
         }
 
         /**

@@ -21,8 +21,10 @@ import java.util.Optional;
  * POST /artifact — SPEED (MaintenanceRate)
  * POST /release/newVersions — latest available version (max-timestamp node)
  *
- * All calls degrade gracefully: any failure defaults the missing metrics to
- * 0.0.
+ * Stability data is returned only when all required Goblin responses are
+ * available. Partial or failed lookups are represented as
+ * {@link Optional#empty()}, preventing unavailable metrics from being
+ * interpreted as legitimate zero values.
  */
 public class GoblinWeaverStabilityAdapter implements LoadStabilityMetricsPort {
 
@@ -48,36 +50,54 @@ public class GoblinWeaverStabilityAdapter implements LoadStabilityMetricsPort {
         @Override
         public Optional<EcosystemStability> loadMetrics(Artifact artifact) {
                 try {
-                        GoblinWeaverReleaseResponse releaseResponse = client
-                                        .fetchReleaseMetrics(
-                                                        artifact.groupId().value(),
-                                                        artifact.artifactId().value(),
-                                                        artifact.version().value())
-                                        .orElse(null);
+                        Optional<GoblinWeaverReleaseResponse> releaseResponse = client.fetchReleaseMetrics(
+                                        artifact.groupId().value(),
+                                        artifact.artifactId().value(),
+                                        artifact.version().value());
 
-                        if (releaseResponse == null) {
-                                LOG.warn("No Goblin release data for {}; stability reported as unavailable",
+                        if (releaseResponse.isEmpty()) {
+                                LOG.warn(
+                                                "No Goblin release data for {}; stability reported as unavailable",
                                                 artifact.gav());
                                 return Optional.empty();
                         }
 
-                        GoblinWeaverArtifactResponse artifactResponse = client
-                                        .fetchArtifactMetrics(artifact.groupId().value(), artifact.artifactId().value())
-                                        .orElse(null);
+                        Optional<GoblinWeaverArtifactResponse> artifactResponse = client.fetchArtifactMetrics(
+                                        artifact.groupId().value(),
+                                        artifact.artifactId().value());
 
-                        GoblinWeaverReleaseResponse newVersionsResponse = client
-                                        .fetchNewVersions(
-                                                        artifact.groupId().value(),
-                                                        artifact.artifactId().value(),
-                                                        artifact.version().value())
-                                        .orElse(null);
+                        if (artifactResponse.isEmpty()) {
+                                LOG.warn(
+                                                "No Goblin artifact data for {}; stability reported as unavailable",
+                                                artifact.gav());
+                                return Optional.empty();
+                        }
+
+                        Optional<GoblinWeaverReleaseResponse> newVersionsResponse = client.fetchNewVersions(
+                                        artifact.groupId().value(),
+                                        artifact.artifactId().value(),
+                                        artifact.version().value());
+
+                        if (newVersionsResponse.isEmpty()) {
+                                LOG.warn(
+                                                "No Goblin version data for {}; stability reported as unavailable",
+                                                artifact.gav());
+                                return Optional.empty();
+                        }
 
                         return Optional.of(
-                                        mapper.toDomain(releaseResponse, artifactResponse, newVersionsResponse,
+                                        mapper.toDomain(
+                                                        releaseResponse.orElseThrow(),
+                                                        artifactResponse.orElseThrow(),
+                                                        newVersionsResponse.orElseThrow(),
                                                         artifact));
 
                 } catch (Exception e) {
-                        LOG.error("Unexpected error loading stability for {}: {}", artifact.gav(), GoblinErrors.describe(e));
+                        LOG.error(
+                                        "Unexpected error loading stability for {}: {}",
+                                        artifact.gav(),
+                                        GoblinErrors.describe(e));
+
                         return Optional.empty();
                 }
         }

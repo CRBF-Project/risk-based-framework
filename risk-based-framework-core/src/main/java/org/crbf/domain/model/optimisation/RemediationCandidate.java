@@ -14,6 +14,7 @@ import org.crbf.domain.model.vulnerability.VulnerabilityId;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -66,6 +67,9 @@ public record RemediationCandidate(
         Optional<EcosystemStability> currentStability,
         Optional<EcosystemStability> fixVersionStability,
         Optional<UpgradePathValidation> upgradePathValidation) {
+
+    /** Rendered in place of a metric the ecosystem data source did not report. */
+    private static final String UNAVAILABLE = "unavailable";
 
     private static final double CVSS_MAX_SCORE = 10.0;
 
@@ -312,20 +316,26 @@ public record RemediationCandidate(
         summary.append(" | ");
 
         fixVersionStability.ifPresentOrElse(
-                stability -> {
-                    StabilityScore score = StabilityScore.ofFixVersion(stability);
-
-                    summary.append(
-                            String.format(
-                                    "Fix: StabilityScore=%.2f "
-                                            + "(AdoptionRate=%.0f%%, "
-                                            + "Lifespan=%.0f days, "
-                                            + "MaintenanceRate=%.4f rel/day)",
-                                    score.value(),
-                                    stability.adoptionRate().value() * 100,
-                                    stability.adoptionLifespan().days(),
-                                    stability.maintenanceRate().value()));
-                },
+                stability -> summary.append(
+                        String.format(
+                                "Fix: StabilityScore=%s "
+                                        + "(AdoptionRate=%s, "
+                                        + "Lifespan=%s, "
+                                        + "MaintenanceRate=%s)",
+                                StabilityScore.ofFixVersion(stability)
+                                        .map(score -> String.format(Locale.ROOT, "%.2f", score.value()))
+                                        .orElse(UNAVAILABLE),
+                                stability.adoptionRate()
+                                        // Two decimals: an adoption of 0.4% is a
+                                        // measurement, and "0%" would hide it.
+                                        .map(rate -> String.format(Locale.ROOT, "%.2f%%", rate.value() * 100))
+                                        .orElse(UNAVAILABLE),
+                                stability.adoptionLifespan()
+                                        .map(lifespan -> String.format(Locale.ROOT, "%.0f days", lifespan.days()))
+                                        .orElse(UNAVAILABLE),
+                                stability.maintenanceRate()
+                                        .map(rate -> String.format(Locale.ROOT, "%.4f rel/day", rate.value()))
+                                        .orElse(UNAVAILABLE))),
                 () -> summary.append("Fix: no Goblin data"));
 
         upgradePathValidation.ifPresent(validation -> {
@@ -344,6 +354,7 @@ public record RemediationCandidate(
 
             validation.upgradePathSecuritySignal().ifPresent(signal -> summary.append(
                     String.format(
+                            Locale.ROOT,
                             " | upgradePathSecuritySignal: %.2f",
                             signal)));
         });

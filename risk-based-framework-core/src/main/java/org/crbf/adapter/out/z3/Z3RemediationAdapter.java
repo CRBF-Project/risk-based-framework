@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Outbound adapter that solves the remediation selection problem using the
@@ -267,11 +268,11 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
                 .orElse(CompatibilityStatus.UNKNOWN.name());
 
         String stabilityStr = c.fixVersionStability()
-                .map(StabilityScore::ofFixVersion)
-                .map(s -> String.format("StabilityScore=%.2f", s.value()))
+                .flatMap(StabilityScore::ofFixVersion)
+                .map(s -> String.format(Locale.ROOT, "StabilityScore=%.2f", s.value()))
                 .orElse("StabilityScore=N/A");
 
-        return String.format("%sRisk=%.2f | Effort=%.1f units (%s) | %s.",
+        return String.format(Locale.ROOT, "%sRisk=%.2f | Effort=%.1f units (%s) | %s.",
                 prefix, c.contextualRisk(riskWeights), c.upgradeCost(), compatStr, stabilityStr);
     }
 
@@ -280,6 +281,7 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
             return "No fix version available — upgrade not possible.";
         }
         return String.format(
+                Locale.ROOT,
                 "Deferred by optimiser: residual risk %.2f within acceptable threshold given sprint budget.",
                 c.contextualRisk(riskWeights));
     }
