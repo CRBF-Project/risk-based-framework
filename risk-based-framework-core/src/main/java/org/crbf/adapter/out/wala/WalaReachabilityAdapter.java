@@ -64,9 +64,11 @@ public class WalaReachabilityAdapter implements AnalyseReachabilityPort {
 
         private static final Logger LOG = LoggerFactory.getLogger(WalaReachabilityAdapter.class);
 
-
         /** Entry point of a Java application, as declared by the JVM specification. */
         private static final String MAIN_METHOD = "main";
+
+        /** Where a JAR declares its {@code ServiceLoader} providers. */
+        private static final String SERVICES_DIRECTORY = "META-INF/services/";
 
         // Matches CamelCase Java class name tokens in CVE text, e.g. "JndiLookup",
         // "StringSubstitutor", "XStream".
@@ -196,6 +198,14 @@ public class WalaReachabilityAdapter implements AnalyseReachabilityPort {
                                         jarClasses.size());
 
                         if (!anyReachable) {
+                                if (declaresServiceProviders(vulnerableArtifact.physicalJarPath())) {
+                                        LOG.info("  {} declares ServiceLoader providers — reported as {} rather than "
+                                                        + "{}, since the call graph does not model dynamic discovery",
+                                                        vulnerableArtifact.gav(),
+                                                        ReachabilityStatus.UNKNOWN,
+                                                        ReachabilityStatus.UNREACHABLE);
+                                        return markAllUnknown(vulnerabilities);
+                                }
                                 return markAllUnreachable(vulnerabilities);
                         }
 
@@ -252,11 +262,6 @@ public class WalaReachabilityAdapter implements AnalyseReachabilityPort {
 
                 java.io.File exclusionsFile = writeExclusionsFile();
 
-                // The default primordial scope was designed for the Java 8 rt.jar. From
-                // Java 9 onwards the standard library is a module image, so the JDK
-                // classes must be read through the jrt file system; otherwise the class
-                // hierarchy is missing java.base and virtual calls into it resolve to
-                // nothing.
                 AnalysisScope scope = Java9AnalysisScopeReader.instance.makePrimordialScope(exclusionsFile);
 
                 Java9AnalysisScopeReader.instance.addClassPathToScope(
@@ -303,6 +308,17 @@ public class WalaReachabilityAdapter implements AnalyseReachabilityPort {
 
                 AnalysisOptions options = new AnalysisOptions(scope, entryPoints);
 
+                // WALA defaults to ReflectionOptions.FULL, which does not converge on a
+                // dependency-injection framework: measured on a Spring Boot project, the
+                // analysis had not terminated after 600s, enumerating reflective
+                // instantiation contexts simultaneously across Spring's BeanUtils and
+                // SpringFactoriesLoader, cglib, Jackson and ByteBuddy. Construction then
+                // times out and every artifact is reported UNKNOWN, which is strictly
+                // worse than a narrower model that terminates. The intermediate
+                // ONE_FLOW_TO_CASTS_APPLICATION_GET_METHOD did not converge either.
+                //
+                // Reflective entry therefore stays unmodelled; see
+                // #declaresServiceProviders for how that is accounted for.
                 options.setReflectionOptions(AnalysisOptions.ReflectionOptions.NO_FLOW_TO_CASTS_NO_METHOD_INVOKE);
 
                 IAnalysisCacheView cache = new AnalysisCacheImpl();
@@ -365,27 +381,33 @@ public class WalaReachabilityAdapter implements AnalyseReachabilityPort {
         private Set<Entrypoint> collectEntryPoints(AnalysisScope scope, IClassHierarchy cha) {
                 List<IMethod> applicationMethods = applicationMethods(scope, cha);
 
-                // An application is exercised through its main methods, and reachability
-                // measured from them reflects what the program actually runs. Treating
-                // every public method as an entry point instead assumes each one may be
-                // called, which over-approximates reachability; it is the only option
-                // for a library, which has no entry point of its own.
+                // Entry points are the main methods together with every public and
+                // protected application method.
+                //
+                // Restricting them to main assumes the application is only ever entered
+                // through its own entry function. That does not hold under a dependency
+                // injection container: a framework instantiates annotated classes and
+                // invokes their methods reflectively, so the call graph would cover only
+                // the static prefix of start-up and report everything wired afterwards —
+                // web layer, serialisers, logging back-ends — as unreachable. Those are
+                // false negatives, and a false negative silently suppresses a
+                // vulnerability, whereas a false positive only costs review effort. The
+                // union therefore over-approximates deliberately, which is the safe
+                // direction of error for a security tool, and is also what a library
+                // requires since it has no entry point of its own.
                 List<IMethod> mainMethods = applicationMethods.stream()
                                 .filter(WalaReachabilityAdapter::isMainMethod)
                                 .toList();
 
-                List<IMethod> selected = mainMethods.isEmpty()
-                                ? applicationMethods.stream()
-                                        .filter(method -> method.isPublic() || method.isProtected())
-                                        .toList()
-                                : mainMethods;
+                List<IMethod> selected = applicationMethods.stream()
+                                .filter(method -> method.isPublic()
+                                                || method.isProtected()
+                                                || isMainMethod(method))
+                                .toList();
 
-                LOG.info("Call graph entry points: {} ({})",
+                LOG.info("Call graph entry points: {} ({} main method(s) plus public application methods)",
                                 selected.size(),
-                                mainMethods.isEmpty()
-                                        ? "no main method found — using all public application methods, "
-                                                + "which over-approximates reachability"
-                                        : "main method(s)");
+                                mainMethods.size());
 
                 return selected.stream()
                                 .map(method -> (Entrypoint) new ArgumentTypeEntrypoint(method, cha))
@@ -528,6 +550,39 @@ public class WalaReachabilityAdapter implements AnalyseReachabilityPort {
          * JAR. Inner classes (containing '$') are excluded — they are accessed
          * through their enclosing class.
          */
+        /**
+         * Whether the artifact registers {@code ServiceLoader} providers, i.e.
+         * declares entries under {@code META-INF/services/}.
+         *
+         * <p>Such an artifact can be entered without any static call edge: the
+         * platform discovers and instantiates the provider by name at run time.
+         * The call graph does not model that mechanism, so finding no path to the
+         * artifact is not grounds for reporting it unreachable — the analysis
+         * simply has nothing to say. Observed in the evaluation with logback,
+         * bound through the SLF4J service interface, and with the MySQL JDBC
+         * driver.
+         *
+         * <p>This is a conservative guard, not a use detector: a registered
+         * provider may never be loaded. It justifies withholding the
+         * {@code UNREACHABLE} verdict, never asserting the opposite one.
+         */
+        private boolean declaresServiceProviders(Path jarPath) {
+                if (jarPath == null) {
+                        return false;
+                }
+                try (JarFile jar = new JarFile(jarPath.toFile())) {
+                        return jar.stream()
+                                        .anyMatch(entry -> !entry.isDirectory()
+                                                        && entry.getName().startsWith(SERVICES_DIRECTORY));
+                } catch (Exception e) {
+                        // Unreadable here means unreadable for the class extraction above
+                        // too, so the artifact already reaches the group-id fallback. Say
+                        // "no evidence of dynamic discovery" rather than failing the run.
+                        LOG.warn("Could not inspect {} for ServiceLoader providers: {}", jarPath, e.getMessage());
+                        return false;
+                }
+        }
+
         private Set<String> extractClassNamesFromJar(Path jarPath) {
                 Set<String> classes = new HashSet<>();
 

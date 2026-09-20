@@ -22,6 +22,6 @@ public enum Scope {
     }
 
     public boolean isAnalysable() {
-        return this != SYSTEM && this != IMPORT;
+        return this == COMPILE || this == RUNTIME;
     }
 }

@@ -276,13 +276,28 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
                 prefix, c.contextualRisk(riskWeights), c.upgradeCost(), compatStr, stabilityStr);
     }
 
+    /**
+     * A deferral is not a statement that the risk is small. The optimiser
+     * maximises total risk reduction under the effort budget, so an artifact is
+     * deferred because its upgrade cost bought less reduction than the upgrades
+     * that were selected. Reporting it as "risk within an acceptable threshold"
+     * contradicts the plan whenever a deferred artifact outranks a selected one
+     * on risk alone, so the rationale names the cost that drove the decision.
+     */
     private String buildDeferRationale(RemediationCandidate c) {
         if (!c.hasFixAvailable()) {
             return "No fix version available — upgrade not possible.";
         }
+
+        String compatStr = c.compatibilityReport()
+                .map(r -> r.status().name())
+                .orElse(CompatibilityStatus.UNKNOWN.name());
+
         return String.format(
                 Locale.ROOT,
-                "Deferred by optimiser: residual risk %.2f within acceptable threshold given sprint budget.",
-                c.contextualRisk(riskWeights));
+                "Not selected under the effort budget: upgrading costs %.1f units (%s), "
+                        + "and the budget bought more risk reduction elsewhere. "
+                        + "Residual risk %.2f remains unmitigated.",
+                c.upgradeCost(), compatStr, c.contextualRisk(riskWeights));
     }
 }
