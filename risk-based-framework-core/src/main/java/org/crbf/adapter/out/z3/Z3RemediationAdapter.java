@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Outbound adapter that solves the remediation selection problem using the
@@ -267,20 +268,36 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
                 .orElse(CompatibilityStatus.UNKNOWN.name());
 
         String stabilityStr = c.fixVersionStability()
-                .map(StabilityScore::ofFixVersion)
-                .map(s -> String.format("StabilityScore=%.2f", s.value()))
+                .flatMap(StabilityScore::ofFixVersion)
+                .map(s -> String.format(Locale.ROOT, "StabilityScore=%.2f", s.value()))
                 .orElse("StabilityScore=N/A");
 
-        return String.format("%sRisk=%.2f | Effort=%.1f units (%s) | %s.",
+        return String.format(Locale.ROOT, "%sRisk=%.2f | Effort=%.1f units (%s) | %s.",
                 prefix, c.contextualRisk(riskWeights), c.upgradeCost(), compatStr, stabilityStr);
     }
 
+    /**
+     * A deferral is not a statement that the risk is small. The optimiser
+     * maximises total risk reduction under the effort budget, so an artifact is
+     * deferred because its upgrade cost bought less reduction than the upgrades
+     * that were selected. Reporting it as "risk within an acceptable threshold"
+     * contradicts the plan whenever a deferred artifact outranks a selected one
+     * on risk alone, so the rationale names the cost that drove the decision.
+     */
     private String buildDeferRationale(RemediationCandidate c) {
         if (!c.hasFixAvailable()) {
             return "No fix version available — upgrade not possible.";
         }
+
+        String compatStr = c.compatibilityReport()
+                .map(r -> r.status().name())
+                .orElse(CompatibilityStatus.UNKNOWN.name());
+
         return String.format(
-                "Deferred by optimiser: residual risk %.2f within acceptable threshold given sprint budget.",
-                c.contextualRisk(riskWeights));
+                Locale.ROOT,
+                "Not selected under the effort budget: upgrading costs %.1f units (%s), "
+                        + "and the budget bought more risk reduction elsewhere. "
+                        + "Residual risk %.2f remains unmitigated.",
+                c.upgradeCost(), compatStr, c.contextualRisk(riskWeights));
     }
 }

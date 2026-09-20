@@ -11,6 +11,7 @@ import org.crbf.domain.model.artifact.TransitiveDepsResult;
 import org.crbf.domain.model.artifact.Version;
 import org.crbf.domain.model.compatibility.CompatibilityReport;
 import org.crbf.domain.model.optimisation.UpgradeCandidate;
+import org.crbf.domain.model.optimisation.UpgradePathStatus;
 import org.crbf.domain.model.optimisation.UpgradePathValidation;
 import org.crbf.domain.model.vulnerability.Vulnerability;
 
@@ -67,17 +68,38 @@ class UpgradePathAnalyser {
             List<Vulnerability> fixVersionVulns,
             List<Artifact> addedDeps,
             List<Artifact> removedDeps,
-            List<Artifact> newVulnerableDeps) {
+            List<Artifact> newVulnerableDeps,
+            boolean fixVersionVulnerabilityDataAvailable,
+            boolean transitiveGraphDataAvailable) {
 
-        boolean isCleanPath() {
-            return fixVersionVulns.isEmpty() && newVulnerableDeps.isEmpty();
+        UpgradePathStatus upgradePathStatus() {
+            if (!fixVersionVulnerabilityDataAvailable
+                    || !transitiveGraphDataAvailable) {
+                return UpgradePathStatus.UNKNOWN;
+            }
+
+            return fixVersionVulns.isEmpty()
+                    && newVulnerableDeps.isEmpty()
+                    ? UpgradePathStatus.CLEAN
+                    : UpgradePathStatus.HAS_RISKS;
         }
 
-        double netRiskDelta() {
-            double riskRemoved = fixVersionVulns.isEmpty() ? 1.0 : 0.0;
-            double riskAdded = newVulnerableDeps.isEmpty() ? 0.0
-                    : (double) newVulnerableDeps.size() / Math.max(addedDeps.size(), 1);
-            return riskRemoved - riskAdded;
+        Optional<Double> upgradePathSecuritySignal() {
+            if (upgradePathStatus() == UpgradePathStatus.UNKNOWN) {
+                return Optional.empty();
+            }
+
+            double fixSafety =
+                    fixVersionVulns.isEmpty() ? 1.0 : 0.0;
+
+            double introducedVulnerabilityRatio =
+                    newVulnerableDeps.isEmpty()
+                            ? 0.0
+                            : (double) newVulnerableDeps.size()
+                                    / Math.max(addedDeps.size(), 1);
+
+            return Optional.of(
+                    fixSafety - introducedVulnerabilityRatio);
         }
     }
 
@@ -92,12 +114,20 @@ class UpgradePathAnalyser {
                 confirmedFixVersion, artifact.scope());
 
         List<Vulnerability> fixVersionVulns;
+        boolean fixVersionVulnerabilityDataAvailable;
+
         try {
             fixVersionVulns = loadVulnerabilitiesPort.loadVulnerabilities(fixArtifact);
+            fixVersionVulnerabilityDataAvailable = true;
         } catch (VulnerabilityLookupException e) {
-            logger.logFixVersionLookupFailed(confirmedFixVersion, e.getMessage());
+            logger.logFixVersionLookupFailed(
+                    confirmedFixVersion,
+                    e.getMessage());
+
             fixVersionVulns = List.of();
+            fixVersionVulnerabilityDataAvailable = false;
         }
+
         if (!fixVersionVulns.isEmpty()) {
             logger.logFixVersionHasCves(confirmedFixVersion, fixVersionVulns.size());
         }
@@ -105,43 +135,67 @@ class UpgradePathAnalyser {
         TransitiveDepsResult currentResult = resolveTransitiveDepsPort.resolveTransitiveDepsWithCves(artifact);
         TransitiveDepsResult fixResult = resolveTransitiveDepsPort.resolveTransitiveDepsWithCves(fixArtifact);
 
-        if (currentResult.isUnavailable() && fixResult.isUnavailable()) {
-            logger.logGoblinUnavailableForValidation(artifact.gav());
-        }
+        boolean transitiveGraphDataAvailable = !currentResult.isUnavailable() && !fixResult.isUnavailable();
 
-        Set<Artifact> addedDeps = setDifference(fixResult.allDeps(), currentResult.allDeps());
-        Set<Artifact> removedDeps = setDifference(currentResult.allDeps(), fixResult.allDeps());
-        logger.logTransitiveDiff(addedDeps.size(), removedDeps.size());
+        Set<Artifact> addedDeps;
+        Set<Artifact> removedDeps;
+        List<Artifact> newVulnerableDeps;
 
-        List<Artifact> newVulnerableDeps = fixResult.vulnerableDeps().stream()
-                .filter(dep -> addedDeps.stream()
-                        .anyMatch(added -> added.groupId().value().equals(dep.groupId().value())
-                                && added.artifactId().value().equals(dep.artifactId().value())))
-                .toList();
+        if (transitiveGraphDataAvailable) {
+            addedDeps = setDifference(fixResult.allDeps(), currentResult.allDeps());
+            removedDeps = setDifference(currentResult.allDeps(), fixResult.allDeps());
+            logger.logTransitiveDiff(addedDeps.size(), removedDeps.size());
 
-        if (!newVulnerableDeps.isEmpty()) {
-            logger.logNewVulnerableTransitiveDeps(newVulnerableDeps);
+            newVulnerableDeps =
+                    fixResult.vulnerableDeps().stream()
+                            .filter(dep -> addedDeps.stream()
+                                    .anyMatch(added ->
+                                            added.groupId().value()
+                                                    .equals(dep.groupId().value())
+                                            && added.artifactId().value()
+                                                    .equals(dep.artifactId().value())))
+                            .toList();
+        } else {
+            logger.logGoblinUnavailableForValidation(
+                    artifact.gav());
+
+            addedDeps = Set.of();
+            removedDeps = Set.of();
+            newVulnerableDeps = List.of();
         }
 
         return new UpgradeAnalysisData(
-                confirmedFixVersion, fixVersionVulns,
-                List.copyOf(addedDeps), List.copyOf(removedDeps),
-                newVulnerableDeps);
+                confirmedFixVersion,
+                fixVersionVulns,
+                List.copyOf(addedDeps),
+                List.copyOf(removedDeps),
+                newVulnerableDeps,
+                fixVersionVulnerabilityDataAvailable,
+                transitiveGraphDataAvailable);
     }
 
     private UpgradePathValidation buildUpgradePathValidation(
             Artifact artifact, String osvFixVersion, UpgradeAnalysisData data,
             Optional<CompatibilityReport> compatibility) {
-        logger.logUpgradeValidationResult(data.isCleanPath(), data.netRiskDelta());
+        
+        UpgradePathStatus pathStatus = data.upgradePathStatus();
+        Optional<Double> securitySignal = data.upgradePathSecuritySignal();
+        logger.logUpgradeValidationResult(pathStatus, securitySignal);
 
         Optional<String> alternativeSafeVersion = data.confirmedFixVersion().equals(osvFixVersion)
                 ? Optional.empty()
                 : Optional.of(osvFixVersion);
 
         return new UpgradePathValidation(
-                artifact, data.confirmedFixVersion(),
-                data.fixVersionVulns(), data.addedDeps(), data.removedDeps(),
-                data.newVulnerableDeps(), compatibility, data.netRiskDelta(), data.isCleanPath(),
+                artifact,
+                data.confirmedFixVersion(),
+                data.fixVersionVulns(),
+                data.addedDeps(),
+                data.removedDeps(),
+                data.newVulnerableDeps(),
+                compatibility,
+                securitySignal,
+                pathStatus,
                 alternativeSafeVersion);
     }
 

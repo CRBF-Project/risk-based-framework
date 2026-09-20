@@ -67,3 +67,14 @@ buildNumber.properties
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+# =========================
+# Documents
+# =========================
+docs/*
+Agents.md
+eclipse-formatter.xml
+
+
+# Evaluation checkouts (cloned target projects)
+evaluation/checkouts/

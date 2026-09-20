@@ -56,7 +56,7 @@ public class GoblinWeaverGraphAdapter implements ResolveTransitiveDependenciesPo
                         return deps;
 
                 } catch (Exception e) {
-                        LOG.error("resolveTransitiveDeps failed for {}: {}", artifact.gav(), e.getMessage());
+                        LOG.error("resolveTransitiveDeps failed for {}: {}", artifact.gav(), GoblinErrors.describe(e));
                         return Set.of();
                 }
         }
@@ -76,7 +76,7 @@ public class GoblinWeaverGraphAdapter implements ResolveTransitiveDependenciesPo
                         return upgradeCandidateMapper.toDomain(response);
 
                 } catch (Exception e) {
-                        LOG.error("getNewerVersionsWithCves failed for {}: {}", artifact.gav(), e.getMessage());
+                        LOG.error("getNewerVersionsWithCves failed for {}: {}", artifact.gav(), GoblinErrors.describe(e));
                         return List.of();
                 }
         }
@@ -90,7 +90,7 @@ public class GoblinWeaverGraphAdapter implements ResolveTransitiveDependenciesPo
                         GoblinWeaverTraversingResponse response = post(TRAVERSING_ENDPOINT, request,
                                         GoblinWeaverTraversingResponse.class);
 
-                        TransitiveDepsResult result = graphMapper.toDomainWithCves(response);
+                        TransitiveDepsResult result = graphMapper.toDomainWithCves(response, Set.of(artifact.gav()));
 
                         LOG.debug("Resolved {} transitive deps for {} ({} with CVEs)",
                                         result.allDeps().size(), artifact.gav(), result.vulnerableDeps().size());
@@ -98,7 +98,7 @@ public class GoblinWeaverGraphAdapter implements ResolveTransitiveDependenciesPo
                         return result;
 
                 } catch (Exception e) {
-                        LOG.error("resolveTransitiveDepsWithCves failed for {}: {}", artifact.gav(), e.getMessage());
+                        LOG.error("resolveTransitiveDepsWithCves failed for {}: {}", artifact.gav(), GoblinErrors.describe(e));
                         return TransitiveDepsResult.unavailable();
                 }
         }
@@ -120,7 +120,7 @@ public class GoblinWeaverGraphAdapter implements ResolveTransitiveDependenciesPo
                         GoblinWeaverTraversingResponse response = post(TRAVERSING_ENDPOINT, request,
                                         GoblinWeaverTraversingResponse.class);
 
-                        TransitiveDepsResult result = graphMapper.toDomainWithCves(response);
+                        TransitiveDepsResult result = graphMapper.toDomainWithCves(response, gavs);
 
                         LOG.debug("Global graph: {} total deps, {} with CVEs across {} fix versions",
                                         result.allDeps().size(), result.vulnerableDeps().size(), gavs.size());
@@ -128,7 +128,7 @@ public class GoblinWeaverGraphAdapter implements ResolveTransitiveDependenciesPo
                         return result;
 
                 } catch (Exception e) {
-                        LOG.error("resolveGlobalGraph failed: {}", e.getMessage());
+                        LOG.error("resolveGlobalGraph failed: {}", GoblinErrors.describe(e));
                         return TransitiveDepsResult.unavailable();
                 }
         }

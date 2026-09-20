@@ -342,6 +342,12 @@
       border: 1px solid #fcd34d
     }
 
+    .badge.MIGRATION_AVAILABLE {
+      background: #f5f3ff;
+      color: #5b21b6;
+      border: 1px solid #c4b5fd
+    }
+
     .badge.DEFER {
       background: #f0fdf4;
       color: #166534;
@@ -542,6 +548,73 @@
       background: #e2e8f0;
       overflow: hidden;
       margin-left: 4px
+    }
+
+    /* ── Risk calculation ──────────────────────────────────────── */
+    .rc {
+      margin-top: 8px;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 8px
+    }
+
+    .rc-summary {
+      font-size: 11px;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      user-select: none
+    }
+
+    .rc-summary:hover {
+      color: #2563eb
+    }
+
+    .rc-note {
+      font-size: 11px;
+      color: #92400e;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 4px;
+      padding: 6px 8px;
+      margin: 8px 0 0
+    }
+
+    .rc-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+      font-size: 11px
+    }
+
+    .rc-table td {
+      padding: 3px 6px;
+      border-bottom: 1px solid #f1f5f9
+    }
+
+    .rc-label {
+      color: #64748b;
+      font-weight: 600;
+      white-space: nowrap
+    }
+
+    .rc-op,
+    .rc-val {
+      font-family: ui-monospace, monospace;
+      text-align: right;
+      color: #475569;
+      white-space: nowrap
+    }
+
+    .rc-subtotal td,
+    .rc-total td {
+      font-weight: 700;
+      color: #1e293b;
+      border-top: 1px solid #cbd5e1;
+      border-bottom: none
+    }
+
+    .rc-total td {
+      border-top: 2px solid #94a3b8
     }
 
     /* ── Reachable methods ─────────────────────────────────────── */
@@ -880,7 +953,7 @@
       const ep = cve.epss?.percentile;
       const cwes = (cve.cwes || []).map(c => `<code>${esc(c)}</code>`).join(', ') || '—';
       const als = (cve.aliases || []).map(a => `<span class="alias">${esc(a)}</span>`).join(' ');
-      const url = esc('https://osv.dev/vulnerability/${id}');
+      const url = esc(`https://osv.dev/vulnerability/${id}`);
       const epssHtml = ev != null
         ? `<span>EPSS <b style="color:${epssClr(ev)}">${(ev * 100).toFixed(3)}%</b>
        ${ep != null ? `<span style="color:#94a3b8">(P${Math.round(ep * 100)})</span>` : ''}
@@ -906,7 +979,53 @@
       <a style="color:#2563eb" href="${esc(cve.advisoryUrl)}" target="_blank" rel="noopener">Advisory &#8599;</a>
       ${cve.fixCommitUrl ? `&nbsp;&nbsp;<a style="color:#2563eb" href="${esc(cve.fixCommitUrl)}" target="_blank" rel="noopener">Fix commit &#8599;</a>` : ''}
     </div>`: ''}
+    ${renderRiskCalculation(cve.contextualRisk)}
   </div>`;
+    }
+
+    // ─── Risk calculation ──────────────────────────────────────────────────────
+    // Every number here is read from the report. The framework owns the formula;
+    // this panel only lays out the factors it published.
+    function renderRiskCalculation(risk) {
+      if (!risk) return '';
+
+      const epssAvailable = risk.epss != null;
+
+      const row = (label, value, weight) => `<tr>
+      <td class="rc-label">${label}</td>
+      <td class="rc-val">${value}</td>
+      <td class="rc-op">&times; ${fmt(weight, 3)}</td>
+    </tr>`;
+
+      // EPSS absent is not EPSS zero: its weight is redistributed over the
+      // remaining signals, so the weights shown here are the ones applied.
+      const renormalisedNote = epssAvailable
+        ? ''
+        : `<p class="rc-note">No EPSS score is published for this vulnerability.
+         Its weight was redistributed over CVSS and staleness, so the effective
+         weights below differ from the configured ones.</p>`;
+
+      return `<details class="rc">
+    <summary class="rc-summary">Risk calculation &mdash; how ${fmt(risk.value)} was derived</summary>
+    ${renormalisedNote}
+    <table class="rc-table">
+      <tbody>
+        ${row('CVSS', fmt(risk.cvssNormalized, 3) + ' normalised', risk.effectiveCvssWeight)}
+        ${row('EPSS', epssAvailable ? fmt(risk.epss, 3) : 'unavailable', risk.effectiveEpssWeight)}
+        ${row('Staleness', fmt(risk.stalenessUrgency, 3) + ' urgency', risk.effectiveStalenessWeight)}
+        <tr class="rc-subtotal">
+          <td colspan="2">Base risk</td>
+          <td class="rc-val">${fmt(risk.baseRisk, 3)}</td>
+        </tr>
+        ${row('Reachability', esc(reachLabel(risk.reachabilityStatus)), risk.reachabilityFactor)}
+        ${row('Upgrade path quality', 'security signal', risk.pathQualityFactor)}
+        <tr class="rc-total">
+          <td colspan="2">Contextual risk</td>
+          <td class="rc-val">${fmt(risk.value, 3)}</td>
+        </tr>
+      </tbody>
+    </table>
+  </details>`;
     }
 
     // ─── Maven snippet ─────────────────────────────────────────────────────────
@@ -938,17 +1057,20 @@
     // ─── Stability ─────────────────────────────────────────────────────────────
     function parseStability(s) {
       if (!s) return null;
-      const get = re => { const m = s.match(re); return m ? m[1] : null; };
+      // Reports written under a locale that uses the comma as the decimal
+      // separator must still parse: "0,85" captured as "0" would render a
+      // measured value as zero.
+      const get = re => { const m = s.match(re); return m ? m[1].replace(',', '.') : null; };
       return {
         tood: get(/TOOD=(\d+)/),
         versionLag: get(/VersionLag=(\d+)/),
         latestVersion: get(/LatestVersion=([\w.\-]+)/),
-        stabilityScore: get(/StabilityScore=([\d.]+)/),
-        adoptionRate: get(/AdoptionRate=([\d.]+%)/),
+        stabilityScore: get(/StabilityScore=([\d.,]+)/),
+        adoptionRate: get(/AdoptionRate=([\d.,]+%)/),
         lifespan: get(/Lifespan=(\d+)/),
-        maintenanceRate: get(/MaintenanceRate=([\d.]+)/),
-        upgradePath: get(/Upgrade path:\s*([A-Z]+)/),
-        netRiskDelta: get(/netRiskDelta:\s*([\d.]+)/),
+        maintenanceRate: get(/MaintenanceRate=([\d.,]+)/),
+        upgradePath: get(/Upgrade path:\s*([A-Z_]+)/),
+        upgradePathSecuritySignal: get(/upgradePathSecuritySignal:\s*([\d.,]+)/),
       };
     }
     function renderStability(summary, fixVersion, currentVersion) {
@@ -958,14 +1080,22 @@
       const toodDays = parseInt(s.tood || '0');
       const toodExtra = toodDays > 365 ? ` (~${(toodDays / 365).toFixed(1)} years)` : '';
       const lag = parseInt(s.versionLag || '0');
-      const score = parseFloat(s.stabilityScore || '0');
-      const scorePct = Math.round(score * 100);
+      // Unavailable ecosystem data must not be rendered as zero confidence.
+      const scoreAvailable = s.stabilityScore != null;
+      const scorePct = scoreAvailable ? Math.round(parseFloat(s.stabilityScore) * 100) : 0;
       const scoreCls = scorePct < 20 ? 'low' : scorePct < 60 ? 'mid' : 'high';
-      const maint = parseFloat(s.maintenanceRate || '0');
-      const maintYr = (maint * 365).toFixed(1);
-      const adoption = s.adoptionRate && s.adoptionRate !== '0%' ? s.adoptionRate : 'No data';
-      const lifespan = parseInt(s.lifespan || '0') > 0 ? `${s.lifespan} days` : 'No data';
-      const upgClean = s.upgradePath === 'CLEAN';
+      // A measured zero is a real signal; only an absent measurement is "No data".
+      const maintYr = s.maintenanceRate != null
+        ? (parseFloat(s.maintenanceRate) * 365).toFixed(1) + ' releases/year'
+        : 'No data';
+      const adoption = s.adoptionRate != null ? s.adoptionRate : 'No data';
+      const lifespan = s.lifespan != null ? `${s.lifespan} days` : 'No data';
+      // An unvalidated path is a third state, not a risky one.
+      const upgPath = s.upgradePath === 'CLEAN'
+        ? { colour: '#166534', label: 'None' }
+        : s.upgradePath === 'HAS_RISKS'
+          ? { colour: '#b91c1c', label: 'Yes &mdash; review required' }
+          : { colour: '#64748b', label: 'Not validated &mdash; ecosystem data unavailable' };
 
       return `<div style="margin-top:14px">
     <h4 class="sub">Ecosystem Analysis</h4>
@@ -992,9 +1122,13 @@
         <div class="stability-card-title">Fix version${fixVersion ? ' (' + esc(fixVersion) + ')' : ''} - Ecosystem Health</div>
         <div class="stability-row">
           <span class="stability-label">Stability score</span>
-          <span class="stability-value">${scorePct}/100</span>
-          <div class="score-bar"><div class="score-fill ${scoreCls}" style="width:${scorePct}%"></div></div>
-          <span class="stability-desc">Composite of adoption rate, active lifespan, and release frequency</span>
+          <span class="stability-value">${scoreAvailable ? scorePct + '/100' : 'No data'}</span>
+          ${scoreAvailable
+          ? `<div class="score-bar"><div class="score-fill ${scoreCls}" style="width:${scorePct}%"></div></div>`
+          : ''}
+          <span class="stability-desc">${scoreAvailable
+          ? 'Composite of adoption rate, active lifespan, and release frequency'
+          : 'Ecosystem data unavailable for this version &mdash; not the same as low confidence'}</span>
         </div>
         <div class="stability-row">
           <span class="stability-label">Adoption rate</span>
@@ -1008,7 +1142,7 @@
         </div>
         <div class="stability-row">
           <span class="stability-label">Release frequency</span>
-          <span class="stability-value">${maintYr} releases/year</span>
+          <span class="stability-value">${esc(maintYr)}</span>
           <span class="stability-desc">How actively new versions are published by maintainers</span>
         </div>
       </div>
@@ -1016,12 +1150,12 @@
         <div class="stability-card-title">Upgrade path assessment</div>
         <div class="stability-row">
           <span class="stability-label">New vulnerabilities introduced</span>
-          <span class="stability-value" style="color:${upgClean ? '#166534' : '#b91c1c'}">${upgClean ? 'None' : 'Yes — review required'}</span>
+          <span class="stability-value" style="color:${upgPath.colour}">${upgPath.label}</span>
           <span class="stability-desc">Whether the fix version itself carries known CVEs</span>
         </div>
         <div class="stability-row">
-          <span class="stability-label">Net risk delta</span>
-          <span class="stability-value">${s.netRiskDelta != null ? s.netRiskDelta : 'N/A'}</span>
+          <span class="stability-label">Upgrade path security signal</span>
+          <span class="stability-value">${s.upgradePathSecuritySignal != null ? s.upgradePathSecuritySignal : 'N/A'}</span>
           <span class="stability-desc">Change in aggregate vulnerability risk score after upgrade</span>
         </div>
       </div>
@@ -1149,10 +1283,15 @@
     ].map(c => `<div class="card ${c.c}"><div class="val">${c.v}</div><div class="lbl">${c.l}</div></div>`).join('');
 
     // ─── Action plan ──────────────────────────────────────────────────────────
-    const ORDER = { MANDATORY: 0, RECOMMENDED: 1, DEFER: 2 };
+    const ORDER = { MANDATORY: 0, RECOMMENDED: 1, MIGRATION_AVAILABLE: 2, DEFER: 3 };
+    // Within a decision group, order by the risk of leaving the artifact as it is.
+    // remediation.riskReduction is what the plan removes, and is zero whenever no
+    // automatic upgrade exists — sorting on it would bury confirmed-reachable
+    // vulnerabilities that simply have no one-line fix.
     const sorted = [...findings].sort((a, b) => {
       const da = a.remediation?.decision || 'DEFER', db = b.remediation?.decision || 'DEFER';
-      return (ORDER[da] ?? 2) - (ORDER[db] ?? 2) || num(b.remediation?.riskReduction) - num(a.remediation?.riskReduction);
+      return (ORDER[da] ?? 3) - (ORDER[db] ?? 3)
+        || num(b.contextualRisk) - num(a.contextualRisk);
     });
 
     document.getElementById('plan-cnt').textContent = sorted.length + ' action' + (sorted.length !== 1 ? 's' : '');
@@ -1171,7 +1310,9 @@
         const vl = f.vulnerabilities || [];
         const rm = f.reachability?.reachableMethods || [];
         const sid = 'ab-' + i, cid = 'ch-' + i;
-        const stepCls = d === 'MANDATORY' ? 'r' : d === 'RECOMMENDED' ? 'a' : 'g';
+        const stepCls = d === 'MANDATORY' ? 'r'
+          : (d === 'RECOMMENDED' || d === 'MIGRATION_AVAILABLE') ? 'a'
+            : 'g';
         const sevs = [...new Set(vl.map(v => v.severity).filter(Boolean))]
           .map(s => `<span class="sev ${s}">${s}</span>`).join(' ');
 
@@ -1190,13 +1331,18 @@
         }
 
         // Reachability note
+        // Reachability reports call-graph evidence only. Priority follows from the
+        // contextual risk and the optimiser's decision, which weigh severity,
+        // exploitability and whether a fix exists at all — none of which this
+        // panel can see. Telling the reader to "upgrade immediately" here
+        // contradicts the DEFER badge on an artifact that has no fix.
         let reachNote = '';
         if (rs === 'UNREACHABLE') {
-          reachNote = `<div class="note info"><strong>Vulnerable code is not reachable from your application</strong>Static call graph analysis found no execution path from your code to the vulnerable library classes. Risk is low, but upgrading is still recommended for hygiene purposes.</div>`;
+          reachNote = `<div class="note info"><strong>Vulnerable code is not reachable from your application</strong>Static call graph analysis found no execution path from your code to the vulnerable library classes.</div>`;
         } else if (rs === 'REACHABLE_CONFIRMED') {
-          reachNote = `<div class="note warn"><strong>&#9888; Vulnerable class is directly invoked</strong>The call graph confirms your application reaches the specific vulnerable class. Exploit is feasible &mdash; upgrade immediately.</div>`;
+          reachNote = `<div class="note warn"><strong>&#9888; Vulnerable class is directly invoked</strong>The call graph confirms your application reaches the specific vulnerable class, so the vulnerable code is exercised.</div>`;
         } else if (rs === 'REACHABLE_PROBABLE') {
-          reachNote = `<div class="note warn"><strong>&#9888; Classes from the vulnerable library are in use</strong>Your application calls classes from this library. The specific vulnerable class was not identified in the CVE description, but exploitability is probable. Treat as high priority.</div>`;
+          reachNote = `<div class="note warn"><strong>&#9888; Classes from the vulnerable library are in use</strong>Your application calls classes from this library. The CVE description does not identify the specific vulnerable class, so exploitability could neither be confirmed nor excluded.</div>`;
         }
 
         const cveHtml = vl.map(buildCveCard).join('');
@@ -1232,6 +1378,7 @@
             ${sevs}
           </div>
           <div class="action-metrics">
+            <span class="metric">Contextual risk: <b>${fmt(f.contextualRisk)}</b></span>
             <span class="metric">Risk reduction: <b>${fmt(f.remediation?.riskReduction)}</b></span>
             <span class="metric">Effort: <b>${fmt(f.remediation?.effortCost, 1)} units</b></span>
             ${bc > 0 ? `<span class="metric" style="color:${adj ? '#b45309' : '#b91c1c'}">${bc} breaking change${bc !== 1 ? 's' : ''}${adj ? ' &mdash; not reachable' : ''}</span>` : ''}
@@ -1264,7 +1411,9 @@
       const labels = {
         CLEAN: '&#10003; Clean &mdash; no new vulnerable transitive dependencies',
         HAS_RISKS: '&#9888; Risks detected &mdash; new vulnerable dependencies found',
-        UNAVAILABLE: 'Unavailable &mdash; graph service not reachable',
+        // Either the graph service could not be reached, or a fix version is
+        // absent from it. Both leave the combined upgrade unvalidated.
+        UNAVAILABLE: 'Not validated &mdash; fix versions absent from the ecosystem graph, or graph service unreachable',
         NOT_RUN: 'Not run',
       };
       let html = `<div class="gv-status ${gvSt}">${labels[gvSt] ?? esc(gvSt)}</div>`;

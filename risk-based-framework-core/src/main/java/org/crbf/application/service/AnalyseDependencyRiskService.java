@@ -14,10 +14,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.crbf.application.model.report.RiskReport;
+import org.crbf.application.model.vex.VexFinding;
 import org.crbf.application.port.in.AnalyseDependencyRiskUseCase;
 import org.crbf.application.port.out.AnalyseReachabilityPort;
 import org.crbf.application.port.out.DetectBreakingChangesPort;
 import org.crbf.application.port.out.ExportRiskReportPort;
+import org.crbf.application.port.out.ExportVexPort;
 import org.crbf.application.port.out.LoadEpssScoresPort;
 import org.crbf.application.port.out.LoadStabilityMetricsPort;
 import org.crbf.application.port.out.LoadVulnerabilitiesPort;
@@ -28,6 +30,7 @@ import org.crbf.application.port.out.VulnerabilityLookupException;
 import org.crbf.domain.model.artifact.Artifact;
 import org.crbf.domain.model.artifact.DependencyPath;
 import org.crbf.domain.model.artifact.LocatedArtifact;
+import org.crbf.domain.model.artifact.Scope;
 import org.crbf.domain.model.artifact.TransitiveDepsResult;
 import org.crbf.domain.model.artifact.Version;
 import org.crbf.domain.model.compatibility.CompatibilityReport;
@@ -55,6 +58,8 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
         private final RiskReportAssembler reportAssembler;
         private final ExportRiskReportPort exportRiskReportPort;
         private final UpgradePathAnalyser upgradePathAnalyser;
+        private final ExportVexPort exportVexPort;
+        
 
         private final AnalysisProgressLogger logger = new AnalysisProgressLogger();
 
@@ -68,7 +73,8 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                         ResolveTransitiveDependenciesPort resolveTransitiveDepsPort,
                         OptimiseRemediationPort optimizeRemediationPort,
                         RiskReportAssembler reportAssembler,
-                        ExportRiskReportPort exportRiskReportPort) {
+                        ExportRiskReportPort exportRiskReportPort,
+                        ExportVexPort exportVexPort) {
 
                 this.resolveArtifactPort = Objects.requireNonNull(resolveArtifactPort);
                 this.loadVulnerabilitiesPort = Objects.requireNonNull(loadVulnerabilitiesPort);
@@ -79,6 +85,7 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                 this.optimizeRemediationPort = Objects.requireNonNull(optimizeRemediationPort);
                 this.reportAssembler = Objects.requireNonNull(reportAssembler);
                 this.exportRiskReportPort = Objects.requireNonNull(exportRiskReportPort);
+                this.exportVexPort = Objects.requireNonNull(exportVexPort);
                 this.upgradePathAnalyser = new UpgradePathAnalyser(
                                 Objects.requireNonNull(loadVulnerabilitiesPort),
                                 Objects.requireNonNull(resolveTransitiveDepsPort),
@@ -94,10 +101,8 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
 
                 Map<Artifact, LocatedArtifact> resolvedArtifacts = resolveAllArtifacts(uniqueArtifacts);
 
-                List<Path> allJarPaths = resolvedArtifacts.values().stream()
-                                .map(LocatedArtifact::physicalJarPath)
-                                .toList();
-                ProjectCallGraph callGraph = analyseReachabilityPort.buildCallGraph(classesPath, allJarPaths);
+                ProjectCallGraph callGraph = analyseReachabilityPort.buildCallGraph(
+                                classesPath, productionJarPaths(resolvedArtifacts));
 
                 List<RemediationCandidate> candidates = new ArrayList<>();
                 List<String> lookupFailures = new ArrayList<>();
@@ -133,6 +138,17 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                 RiskReport report = reportAssembler.assemble(projectPath, dependencyGraph,
                                 uniqueArtifacts, candidates, plan, lookupFailures);
                 exportRiskReportPort.exportReport(report, projectPath.resolve("target"));
+
+                List<VexFinding> vexFindings = candidates.stream()
+                        .flatMap(candidate ->
+                                candidate.reachabilityReports().stream()
+                                        .map(reachability ->
+                                                new VexFinding(
+                                                        candidate.artifact(),
+                                                        reachability)))
+                        .toList();
+
+                exportVexPort.exportVex(vexFindings, projectPath.resolve("target"));
 
                 logger.logAnalysisComplete();
         }
@@ -173,14 +189,14 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                                         .map(r -> r.contextualise(callGraph));
 
                         return Optional.of(new RemediationCandidate(locatedArtifact.artifact(),
-                                        vulnerabilities, reachability, reachabilityResults,
+                                        vulnerabilities, reachabilityResults,
                                         contextualReport, Optional.of(validation.proposedVersion()),
                                         Optional.empty(),
                                         currentStability, fixStability, Optional.of(validation)));
                 }
 
                 return Optional.of(new RemediationCandidate(
-                                locatedArtifact.artifact(), vulnerabilities, reachability,
+                                locatedArtifact.artifact(), vulnerabilities,
                                 reachabilityResults,
                                 Optional.empty(), vulnerableArtifact.requiredFixVersion().map(Version::value),
                                 vulnerableArtifact.requiredAlternativeFix(),
@@ -198,6 +214,10 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                 VulnerableArtifact vulnerableArtifact = new VulnerableArtifact(artifact, enrichedVulns);
                 logger.logVulnerableArtifact(vulnerableArtifact.gav(), enrichedVulns.size());
 
+                List<VulnerabilityReachability> unknownReachability = enrichedVulns.stream()
+                        .map(VulnerabilityReachability::unknown)
+                        .toList();
+
                 Optional<EcosystemStability> currentStability = loadStabilityMetrics(artifact, false);
                 currentStability.ifPresent(s -> logger.logStability(artifact, s, "Current"));
 
@@ -212,7 +232,7 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                         fixStability.ifPresent(s -> logger.logStability(fixArtifact, s, "Fix version"));
 
                         return Optional.of(new RemediationCandidate(
-                                        artifact, enrichedVulns, ReachabilityStatus.UNKNOWN, List.of(),
+                                        artifact, enrichedVulns, unknownReachability,
                                         validation.compatibilityReport(),
                                         Optional.of(validation.proposedVersion()),
                                         Optional.empty(),
@@ -220,7 +240,7 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                 }
 
                 return Optional.of(new RemediationCandidate(
-                                artifact, enrichedVulns, ReachabilityStatus.UNKNOWN, List.of(),
+                                artifact, enrichedVulns, unknownReachability,
                                 Optional.empty(), Optional.empty(),
                                 vulnerableArtifact.requiredAlternativeFix(),
                                 currentStability, Optional.empty(), Optional.empty()));
@@ -253,9 +273,14 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
          */
         private Optional<EcosystemStability> loadStabilityMetrics(Artifact artifact, Boolean isFixVersion) {
                 try {
-                        EcosystemStability stability = loadStabilityMetricsPort.loadMetrics(artifact);
-                        logger.logStabilityLoaded(isFixVersion ? "Fix version" : "Current", artifact, stability);
-                        return Optional.of(stability);
+                        Optional<EcosystemStability> stability = loadStabilityMetricsPort.loadMetrics(artifact);
+                        stability.ifPresentOrElse(
+                                        s -> logger.logStabilityLoaded(
+                                                        isFixVersion ? "Fix version" : "Current", artifact, s),
+                                        () -> logger.logStabilityFailed(
+                                                        isFixVersion ? "fix" : "current", artifact.gav(),
+                                                        "no ecosystem data available"));
+                        return stability;
                 } catch (Exception e) {
                         logger.logStabilityFailed(isFixVersion ? "fix" : "current", artifact.gav(), e.getMessage());
                         return Optional.empty();
@@ -280,6 +305,23 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                 }
 
                 return Collections.unmodifiableMap(resolved);
+        }
+
+        /**
+         * Returns the JARs that form the production classpath.
+         *
+         * <p>The call graph is rooted at the project's compiled production classes,
+         * so a test-scope dependency can only be reached through test code that is
+         * not part of the analysis. Keeping such a JAR in the scope would allow a
+         * path that does not exist in the deployed application to be reported as
+         * reachable. Test-scope artifacts remain in the dependency graph and are
+         * still scanned for vulnerabilities.
+         */
+        private List<Path> productionJarPaths(Map<Artifact, LocatedArtifact> resolvedArtifacts) {
+                return resolvedArtifacts.entrySet().stream()
+                                .filter(entry -> entry.getKey().scope() != Scope.TEST)
+                                .map(entry -> entry.getValue().physicalJarPath())
+                                .toList();
         }
 
         private Set<Artifact> extractUniqueArtifacts(List<DependencyPath> dependencyGraph) {

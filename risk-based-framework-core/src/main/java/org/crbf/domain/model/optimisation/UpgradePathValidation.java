@@ -15,10 +15,25 @@ public record UpgradePathValidation(
                 List<Artifact> removedTransitiveDeps,
                 List<Artifact> newTransitiveVulnerableDeps,
                 Optional<CompatibilityReport> compatibilityReport,
-                double netRiskDelta,
-                boolean isCleanPath,
+                Optional<Double> upgradePathSecuritySignal,
+                UpgradePathStatus upgradePathStatus,
                 Optional<String> alternativeSafeVersion) {
         public UpgradePathValidation {
+                upgradePathSecuritySignal = upgradePathSecuritySignal == null ? Optional.empty() : upgradePathSecuritySignal;
+                upgradePathStatus = upgradePathStatus == null ? UpgradePathStatus.UNKNOWN : upgradePathStatus;
+                
+                upgradePathSecuritySignal.ifPresent(signal -> 
+                {        
+                        if (signal < -1.0 || signal > 1.0)
+                                throw new IllegalArgumentException("Upgrade path security signal must be in [-1.0, 1.0].");
+                });
+
+                if (upgradePathStatus == UpgradePathStatus.UNKNOWN && upgradePathSecuritySignal.isPresent())
+                        throw new IllegalArgumentException("Unknown upgrade path cannot have a security signal.");
+
+                if (upgradePathStatus != UpgradePathStatus.UNKNOWN && upgradePathSecuritySignal.isEmpty())
+                        throw new IllegalArgumentException("Known upgrade path must have a security signal.");
+                
                 fixVersionVulns = fixVersionVulns == null
                                 ? List.of()
                                 : List.copyOf(fixVersionVulns);
@@ -40,10 +55,14 @@ public record UpgradePathValidation(
         }
 
         public boolean hasNewRisks() {
-                return !fixVersionVulns.isEmpty() || !newTransitiveVulnerableDeps.isEmpty();
+                return upgradePathStatus == UpgradePathStatus.HAS_RISKS;
         }
 
         public int totalNewVulns() {
                 return fixVersionVulns.size() + newTransitiveVulnerableDeps.size();
+        }
+
+        public boolean isCleanPath() {
+                return upgradePathStatus == UpgradePathStatus.CLEAN;
         }
 }

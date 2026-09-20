@@ -3,6 +3,13 @@ package org.crbf.application.model.report;
 import java.util.List;
 import java.util.Optional;
 
+import org.crbf.domain.model.risk.ContextualRisk;
+
+/**
+ * @param contextualRisk the score for this vulnerability together with every
+ *                       factor used to derive it, so that a reader of the
+ *                       report can retrace the calculation.
+ */
 public record CveSummary(
         String id,
         String severity,
@@ -14,7 +21,8 @@ public record CveSummary(
         String advisoryUrl,
         String fixCommitUrl,
         String published,
-        String modified) {
+        String modified,
+        ContextualRisk contextualRisk) {
     public CveSummary {
         cwes = cwes == null ? List.of() : List.copyOf(cwes);
         aliases = aliases == null ? List.of() : List.copyOf(aliases);

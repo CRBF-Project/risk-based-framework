@@ -76,6 +76,12 @@ public record CompatibilityReport(
         if (status != CompatibilityStatus.BINARY_INCOMPATIBLE || breakingChanges.isEmpty()) {
             return this;
         }
+        // Without a call graph no method can be found reachable, which would
+        // silently downgrade every incompatible upgrade to COMPATIBLE. An
+        // absent analysis is not evidence that the breaking changes are unused.
+        if (callGraph.isEmpty()) {
+            return this;
+        }
         boolean anyReachable = breakingMethodIds().stream()
                 .anyMatch(callGraph::containsMethodId);
         if (!anyReachable) {

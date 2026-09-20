@@ -21,8 +21,8 @@ class GoblinWeaverStabilityMapper {
 
         int versionLag = 0;
         int toodDays = 0;
-        double adoptionRate = 0.0;
-        double adoptionLifespan = 0.0;
+        Double adoptionRate = null;
+        Double adoptionLifespan = null;
         long releaseTimestamp = 0L;
 
         if (releaseResponse != null
@@ -42,17 +42,17 @@ class GoblinWeaverStabilityMapper {
             adoptionRate = resolveAdoptionRate(node);
             adoptionLifespan = node.adoptionLifespan() != null && node.adoptionLifespan() >= 0
                     ? node.adoptionLifespan()
-                    : 0.0;
+                    : null;
             releaseTimestamp = node.timestamp() != null ? node.timestamp() : 0L;
         }
 
-        double maintenanceRate = 0.0;
+        Double maintenanceRate = null;
         if (artifactResponse != null && artifactResponse.nodes() != null) {
             maintenanceRate = artifactResponse.nodes().stream()
                     .map(GoblinWeaverArtifactResponse.GoblinArtifactNodeDto::speed)
                     .filter(s -> s != null && s >= 0)
                     .findFirst()
-                    .orElse(0.0);
+                    .orElse(null);
         }
 
         String latestVersion = resolveLatestVersionFromNewVersions(newVersionsResponse, artifact.version().value());
@@ -61,13 +61,14 @@ class GoblinWeaverStabilityMapper {
                 adoptionRate, adoptionLifespan, maintenanceRate, releaseTimestamp);
     }
 
-    private double resolveAdoptionRate(GoblinWeaverReleaseResponse.GoblinNodeDto node) {
+    private Double resolveAdoptionRate(GoblinWeaverReleaseResponse.GoblinNodeDto node) {
         if (node.adoptionRate() != null && node.adoptionRate() >= 0.0) {
             return node.adoptionRate();
         }
-        // Fallback: relative popularity within the same artifact's history is not
-        // available here (single-node response), so return 0.0
-        return 0.0;
+        // No adoption figure was reported. Returning 0.0 here would be read
+        // downstream as "no dependent adopted this release", which is a claim
+        // the response does not make.
+        return null;
     }
 
     private String resolveLatestVersionFromNewVersions(
