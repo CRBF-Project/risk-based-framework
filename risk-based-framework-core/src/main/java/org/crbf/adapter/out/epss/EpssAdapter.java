@@ -16,6 +16,8 @@ import java.time.Duration;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Objects;
+import java.util.stream.Stream;
 
 public class EpssAdapter implements LoadEpssScoresPort {
 
@@ -31,23 +33,27 @@ public class EpssAdapter implements LoadEpssScoresPort {
     }
 
     public EpssAdapter(String epssApiUrl) {
-        this.epssApiUrl = epssApiUrl;
-        this.httpClient = HttpClient.newBuilder()
+        this(epssApiUrl, HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
-                .build();
+                .build());
+    }
+
+    EpssAdapter(String epssApiUrl, HttpClient httpClient) {
+        this.epssApiUrl = epssApiUrl;
+        this.httpClient = httpClient;
         this.objectMapper = new ObjectMapper();
     }
 
     @Override
     public List<Vulnerability> enrich(List<Vulnerability> vulnerabilities) {
         List<String> cveIds = vulnerabilities.stream()
-                .flatMap(v -> v.aliases().stream().filter(VulnerabilityId::isCve))
+                .flatMap(this::cveIds)
                 .map(VulnerabilityId::value)
                 .distinct()
                 .toList();
 
         if (cveIds.isEmpty()) {
-            LOG.debug("No CVE aliases found, skipping EPSS enrichment");
+            LOG.debug("No CVE identifiers found, skipping EPSS enrichment");
             return vulnerabilities;
         }
 
@@ -85,9 +91,9 @@ public class EpssAdapter implements LoadEpssScoresPort {
     }
 
     private Vulnerability enrichVulnerability(Vulnerability vulnerability, EpssResponse epssResponse) {
-        return vulnerability.aliases().stream()
-                .filter(VulnerabilityId::isCve)
+        return cveIds(vulnerability)
                 .flatMap(cveId -> epssResponse.data().stream()
+                        .filter(Objects::nonNull)
                         .filter(d -> cveId.value().equalsIgnoreCase(d.cve())))
                 .map(this::parseEpssScore)
                 .flatMap(Optional::stream)
@@ -96,13 +102,19 @@ public class EpssAdapter implements LoadEpssScoresPort {
                 .orElse(vulnerability);
     }
 
+    private Stream<VulnerabilityId> cveIds(Vulnerability vulnerability) {
+        return Stream.concat(Stream.of(vulnerability.id()), vulnerability.aliases().stream())
+                .filter(VulnerabilityId::isCve)
+                .distinct();
+    }
+
     private Optional<EpssScore> parseEpssScore(EpssResponse.EpssDataDto d) {
         if (d.epssScore() == null || d.percentile() == null) return Optional.empty();
         try {
             return Optional.of(new EpssScore(
                     Double.parseDouble(d.epssScore()),
                     Double.parseDouble(d.percentile())));
-        } catch (NumberFormatException e) {
+        } catch (IllegalArgumentException e) {
             return Optional.empty();
         }
     }

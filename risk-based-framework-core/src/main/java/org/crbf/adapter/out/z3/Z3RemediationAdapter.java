@@ -12,6 +12,8 @@ import com.microsoft.z3.Status;
 import org.crbf.application.port.out.OptimiseRemediationPort;
 import org.crbf.domain.model.compatibility.CompatibilityStatus;
 import org.crbf.domain.model.optimisation.GlobalGraphValidation;
+import org.crbf.domain.model.optimisation.InfeasibilityDetails;
+import org.crbf.domain.model.optimisation.OptimisationStatus;
 import org.crbf.domain.model.optimisation.RemediationCandidate;
 import org.crbf.domain.model.optimisation.RemediationDecision;
 import org.crbf.domain.model.optimisation.RemediationPlan;
@@ -23,6 +25,8 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * Outbound adapter that solves the remediation selection problem using the
@@ -39,6 +43,7 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
 
     private final double effortBudget;
     private final RiskWeights riskWeights;
+    private final Supplier<Context> contextFactory;
 
     /**
      * @param effortBudget Maximum total effort units available for upgrades.
@@ -51,11 +56,17 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
     }
 
     public Z3RemediationAdapter(double effortBudget, RiskWeights riskWeights) {
+        this(effortBudget, riskWeights, Context::new);
+    }
+
+    // Allows deterministic testing of failure at the external solver boundary.
+    Z3RemediationAdapter(double effortBudget, RiskWeights riskWeights, Supplier<Context> contextFactory) {
         if (effortBudget <= 0) {
             throw new IllegalArgumentException("Effort budget must be positive. Received: " + effortBudget);
         }
         this.effortBudget = effortBudget;
         this.riskWeights = riskWeights;
+        this.contextFactory = contextFactory;
     }
 
     @Override
@@ -65,16 +76,26 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
                 .toList();
 
         if (vulnerable.isEmpty()) {
-            return RemediationPlan.empty();
+            return RemediationPlan.empty().withEffortBudget(effortBudget);
         }
 
         LOG.info("Starting optimisation — {} candidates, effort budget: {} units", vulnerable.size(), effortBudget);
 
-        try (Context ctx = new Context()) {
-            return solveWithZ3(ctx, vulnerable);
-        } catch (Exception e) {
+
+        double mandatoryEffort = vulnerable.stream()
+                .filter(RemediationCandidate::isMandatoryUpgrade)
+                .mapToDouble(RemediationCandidate::upgradeCost)
+                .sum();
+        if (mandatoryEffort > effortBudget) {
+            return infeasiblePlan(vulnerable, InfeasibilityDetails.Reason.MANDATORY_EFFORT_EXCEEDS_BUDGET)
+                    .withEffortBudget(effortBudget);
+        }
+
+        try (Context ctx = contextFactory.get()) {
+            return solveWithZ3(ctx, vulnerable).withEffortBudget(effortBudget);
+        } catch (Exception | LinkageError e) {
             LOG.error("Z3 optimisation failed ({}). Falling back to greedy selection.", e.getMessage());
-            return greedyFallback(vulnerable);
+            return greedyFallback(vulnerable).withEffortBudget(effortBudget);
         }
     }
 
@@ -98,11 +119,37 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
 
         if (status == Status.SATISFIABLE) {
             LOG.info("Optimal solution found.");
-            return extractPlan(optimizer.getModel(), candidates, upgradeVars, true);
+            return extractPlan(optimizer.getModel(), candidates, upgradeVars);
         }
 
-        LOG.warn("No feasible solution found (status: {}). Budget may be insufficient to cover mandatory upgrades. Falling back to greedy selection.", status);
+        if (status == Status.UNSATISFIABLE) {
+            return infeasiblePlan(candidates, InfeasibilityDetails.Reason.UNSATISFIABLE_CONSTRAINTS);
+        }
+
+        LOG.warn("Z3 could not determine a solution ({}). Falling back to greedy selection.", optimizer.getReasonUnknown());
         return greedyFallback(candidates);
+    }
+
+    private RemediationPlan infeasiblePlan(List<RemediationCandidate> candidates, InfeasibilityDetails.Reason cause) {
+        String reason = cause == InfeasibilityDetails.Reason.MANDATORY_EFFORT_EXCEEDS_BUDGET
+                ? "No feasible remediation solution: mandatory upgrades exceed the effort budget."
+                : "No feasible remediation solution: the update constraints cannot all be satisfied.";
+        LOG.warn(reason);
+        List<RemediationDecision> decisions = candidates.stream()
+                .map(c -> RemediationDecision.defer(c.artifact(),
+                        (!c.hasFixAvailable() ? "No fix version available. "
+                                : c.isMandatoryUpgrade() ? "Mandatory upgrade pending. " : "Optional upgrade not selected. ") + reason))
+                .toList();
+        double residualRisk = candidates.stream()
+                .mapToDouble(c -> c.contextualRisk(riskWeights)).sum();
+        List<InfeasibilityDetails.MandatoryUpgrade> pending = candidates.stream()
+                .filter(RemediationCandidate::isMandatoryUpgrade)
+                .map(c -> new InfeasibilityDetails.MandatoryUpgrade(
+                        c.artifact().gav(), c.fixVersion().orElseThrow(), c.upgradeCost()))
+                .toList();
+        return new RemediationPlan(decisions, 0.0, residualRisk, 0.0,
+                OptimisationStatus.INFEASIBLE, GlobalGraphValidation.notRun(),
+                Optional.of(InfeasibilityDetails.of(cause, effortBudget, pending)));
     }
 
     private BoolExpr[] declareDecisionVariables(Context ctx, int n) {
@@ -167,8 +214,7 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
     private RemediationPlan extractPlan(
             Model model,
             List<RemediationCandidate> candidates,
-            BoolExpr[] upgradeVars,
-            boolean solvedByZ3) {
+            BoolExpr[] upgradeVars) {
 
         List<RemediationDecision> decisions = new ArrayList<>();
         double totalRiskReduction = 0.0;
@@ -199,7 +245,8 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
             decisions.add(decision);
         }
 
-        return new RemediationPlan(decisions, totalRiskReduction, totalResidualRisk, totalEffort, solvedByZ3, GlobalGraphValidation.notRun());
+        return new RemediationPlan(decisions, totalRiskReduction, totalResidualRisk, totalEffort,
+                OptimisationStatus.OPTIMAL, GlobalGraphValidation.notRun());
     }
 
     // -------------------------------------------------------------------------
@@ -207,9 +254,9 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
     // -------------------------------------------------------------------------
 
     /**
-     * Greedy fallback used when Z3 fails or reports UNSATISFIABLE.
-     * Selects upgrades in descending order of risk/effort ratio until
-     * the budget is exhausted, then forces mandatory upgrades regardless.
+     * Greedy fallback for technical solver failures, after feasibility is checked.
+     * Reserves effort for mandatory upgrades before spending on optional upgrades
+     * in descending order of risk/effort ratio. It does not guarantee optimality.
      */
     private RemediationPlan greedyFallback(List<RemediationCandidate> candidates) {
         LOG.info("Running greedy fallback selection.");
@@ -221,7 +268,9 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
                         a.contextualRisk(riskWeights) / a.upgradeCost()))
                 .toList();
 
-        double remainingBudget = effortBudget;
+        double remainingBudget = effortBudget - sorted.stream()
+                .filter(RemediationCandidate::isMandatoryUpgrade)
+                .mapToDouble(RemediationCandidate::upgradeCost).sum();
         List<RemediationDecision> decisions = new ArrayList<>();
         double totalRiskReduction = 0.0;
         double totalResidualRisk = 0.0;
@@ -234,7 +283,7 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
             if (fits || forced) {
                 double risk = c.contextualRisk(riskWeights);
                 double effort = c.upgradeCost();
-                if (fits)
+                if (!forced)
                     remainingBudget -= effort;
                 totalRiskReduction += risk;
                 totalEffort += effort;
@@ -249,13 +298,15 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
             }
         }
 
-        candidates.stream()
-                .filter(c -> !c.hasFixAvailable())
-                .forEach(c -> {
-                    decisions.add(RemediationDecision.defer(c.artifact(), "No fix version available."));
-                });
+        for (RemediationCandidate c : candidates) {
+            if (!c.hasFixAvailable()) {
+                decisions.add(RemediationDecision.defer(c.artifact(), "No fix version available."));
+                totalResidualRisk += c.contextualRisk(riskWeights);
+            }
+        }
 
-        return new RemediationPlan(decisions, totalRiskReduction, totalResidualRisk, totalEffort, false, GlobalGraphValidation.notRun());
+        return new RemediationPlan(decisions, totalRiskReduction, totalResidualRisk, totalEffort,
+                OptimisationStatus.GREEDY_FALLBACK, GlobalGraphValidation.notRun());
     }
 
     private String buildUpgradeRationale(RemediationCandidate c) {

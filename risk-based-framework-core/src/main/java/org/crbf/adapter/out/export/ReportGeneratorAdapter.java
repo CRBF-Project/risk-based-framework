@@ -61,7 +61,12 @@ public class ReportGeneratorAdapter implements ExportRiskReportPort {
                 throw new IOException("Report template not found on classpath: /report-template.html");
             }
             String html = new String(is.readAllBytes(), StandardCharsets.UTF_8)
-                    .replace("REPORT_DATA_PLACEHOLDER", jsonString);
+                    // JSON remains unchanged on disk. Escape HTML delimiters only
+                    // in the embedded data block, including a possible </script>.
+                    .replace("REPORT_DATA_PLACEHOLDER", jsonString
+                            .replace("&", "\\u0026")
+                            .replace("<", "\\u003c")
+                            .replace(">", "\\u003e"));
             Files.writeString(htmlFile.toPath(), html, StandardCharsets.UTF_8);
         }
     }

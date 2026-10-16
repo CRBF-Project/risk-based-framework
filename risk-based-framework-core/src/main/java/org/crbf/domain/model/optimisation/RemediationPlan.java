@@ -2,34 +2,70 @@ package org.crbf.domain.model.optimisation;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Represents the complete output of the Z3 optimisation step.
  *
- * Contains the full list of per-artifact decisions, aggregate metrics, and a
- * flag indicating whether the plan was produced by the Z3 solver ({@code true})
- * or by the greedy fallback ({@code false}).
+ * Contains the full list of per-artifact decisions, aggregate metrics, and an
+ * optimisation outcome. An infeasible result contains no upgrade recommendations;
+ * its decisions retain all candidates as unmitigated risk, not a feasible plan.
  *
  * @param decisions  One {@link RemediationDecision} per vulnerable artifact.
  * @param totalRiskReduction Sum of risk scores eliminated by all recommended upgrades.
  * @param totalResidualRisk Sum of risk scores that remain after applying the plan.
  * @param totalEffortCost Total effort units consumed by all recommended upgrades.
- * @param solvedByZ3 {@code true} if produced by Z3; {@code false} for the greedy fallback.
+ * @param optimisationStatus Whether optimisation succeeded, was infeasible, or used a technical fallback.
+ * @param availableEffortBudget Configured effort limit, absent for legacy plan producers.
  */
 public record RemediationPlan(
         List<RemediationDecision> decisions,
         double totalRiskReduction,
         double totalResidualRisk,
         double totalEffortCost,
-        boolean solvedByZ3,
-        GlobalGraphValidation globalGraphValidation
+        OptimisationStatus optimisationStatus,
+        GlobalGraphValidation globalGraphValidation,
+        Optional<InfeasibilityDetails> infeasibility,
+        Optional<Double> availableEffortBudget
 ) {
     public RemediationPlan {
         decisions = decisions == null ? List.of() : List.copyOf(decisions);
     }
 
+    /** Compatibility constructor for producers that do not report a budget. */
+    public RemediationPlan(List<RemediationDecision> decisions, double totalRiskReduction,
+            double totalResidualRisk, double totalEffortCost, OptimisationStatus optimisationStatus,
+            GlobalGraphValidation globalGraphValidation, Optional<InfeasibilityDetails> infeasibility) {
+        this(decisions, totalRiskReduction, totalResidualRisk, totalEffortCost,
+                optimisationStatus, globalGraphValidation, infeasibility, Optional.empty());
+    }
+
+    public RemediationPlan withEffortBudget(double budget) {
+        return new RemediationPlan(decisions, totalRiskReduction, totalResidualRisk, totalEffortCost,
+                optimisationStatus, globalGraphValidation, infeasibility, Optional.of(budget));
+    }
+
+    public RemediationPlan(List<RemediationDecision> decisions, double totalRiskReduction,
+            double totalResidualRisk, double totalEffortCost, OptimisationStatus optimisationStatus,
+            GlobalGraphValidation globalGraphValidation) {
+        this(decisions, totalRiskReduction, totalResidualRisk, totalEffortCost,
+                optimisationStatus, globalGraphValidation, Optional.empty());
+    }
+
+    public RemediationPlan(List<RemediationDecision> decisions, double totalRiskReduction,
+            double totalResidualRisk, double totalEffortCost, boolean solvedByZ3,
+            GlobalGraphValidation globalGraphValidation) {
+        this(decisions, totalRiskReduction, totalResidualRisk, totalEffortCost,
+                solvedByZ3 ? OptimisationStatus.OPTIMAL : OptimisationStatus.GREEDY_FALLBACK,
+                globalGraphValidation);
+    }
+
+    public boolean solvedByZ3() {
+        return optimisationStatus == OptimisationStatus.OPTIMAL;
+    }
+
     public static RemediationPlan empty() {
-        return new RemediationPlan(List.of(), 0.0, 0.0, 0.0, false, GlobalGraphValidation.notRun());
+        return new RemediationPlan(List.of(), 0.0, 0.0, 0.0, OptimisationStatus.NOT_RUN, GlobalGraphValidation.notRun());
     }
 
     public RemediationPlan withGlobalValidation(GlobalGraphValidation validation) {
@@ -38,8 +74,10 @@ public record RemediationPlan(
                 totalRiskReduction,
                 totalResidualRisk,
                 totalEffortCost,
-                solvedByZ3,
-                validation);
+                optimisationStatus,
+                validation,
+                infeasibility,
+                availableEffortBudget);
     }
 
     public List<RemediationDecision> upgradeRecommendations() {

@@ -22,9 +22,9 @@ import java.util.Optional;
  * POST /release/newVersions — latest available version (max-timestamp node)
  *
  * Stability data is returned only when all required Goblin responses are
- * available. Partial or failed lookups are represented as
- * {@link Optional#empty()}, preventing unavailable metrics from being
- * interpreted as legitimate zero values.
+ * available and freshness is valid. Failed lookups or missing freshness are
+ * represented as {@link Optional#empty()}. Optional adoption and maintenance
+ * indicators remain individually unavailable when not reported.
  */
 public class GoblinWeaverStabilityAdapter implements LoadStabilityMetricsPort {
 
@@ -40,9 +40,12 @@ public class GoblinWeaverStabilityAdapter implements LoadStabilityMetricsPort {
         }
 
         public GoblinWeaverStabilityAdapter(String baseUrl) {
-                HttpClient httpClient = HttpClient.newBuilder()
+                this(baseUrl, HttpClient.newBuilder()
                                 .connectTimeout(Duration.ofSeconds(30))
-                                .build();
+                                .build());
+        }
+
+        GoblinWeaverStabilityAdapter(String baseUrl, HttpClient httpClient) {
                 this.client = new GoblinWeaverClient(baseUrl, httpClient, new ObjectMapper());
                 this.mapper = new GoblinWeaverStabilityMapper();
         }

@@ -2,6 +2,7 @@ package org.crbf.application.service;
 
 import org.crbf.domain.model.artifact.Artifact;
 import org.crbf.domain.model.compatibility.CompatibilityStatus;
+import org.crbf.domain.model.optimisation.OptimisationStatus;
 import org.crbf.domain.model.optimisation.RemediationDecision;
 import org.crbf.domain.model.optimisation.RemediationPlan;
 import org.crbf.domain.model.reachability.VulnerabilityReachability;
@@ -207,15 +208,18 @@ public class AnalysisProgressLogger {
 
     public void logRemediationPlan(RemediationPlan plan) {
         LOG.info("\n╔══════════════════════════════════════════════════════════════════╗");
-        LOG.info("║  Z3 Optimal Remediation Plan  ({})",
-                plan.solvedByZ3() ? "SMT-Optimal" : "Greedy Fallback");
+        LOG.info("║  Remediation Optimisation  ({})", plan.optimisationStatus());
         LOG.info("╚══════════════════════════════════════════════════════════════════╝");
 
         List<RemediationDecision> upgrades = plan.upgradeRecommendations();
         List<RemediationDecision> deferred = plan.deferredDecisions();
 
         if (upgrades.isEmpty()) {
-            LOG.info("  No upgrades recommended (no fixable vulnerabilities found).");
+            if (plan.optimisationStatus() == OptimisationStatus.INFEASIBLE) {
+                LOG.warn("  No feasible remediation solution. No upgrades selected; all risk remains unmitigated.");
+            } else {
+                LOG.info("  No upgrades selected within the effort budget.");
+            }
         } else {
             LOG.info("\n  ── RECOMMENDED UPGRADES ──");
             upgrades.forEach(d -> {
@@ -226,9 +230,22 @@ public class AnalysisProgressLogger {
             });
         }
 
+        plan.infeasibility().ifPresent(details -> {
+            LOG.warn("  Infeasibility reason      : {}", details.reason());
+            LOG.info("  Available effort budget  : {} units", details.availableEffortBudget());
+            LOG.info("  Required mandatory effort: {} units", details.requiredMandatoryEffort());
+            details.budgetShortfall().ifPresent(shortfall -> LOG.warn("  Budget shortfall         : {} units", shortfall));
+            LOG.info("  Mandatory upgrades pending: {}", details.mandatoryUpgrades().size());
+            details.mandatoryUpgrades().forEach(upgrade -> LOG.info(
+                    "  MANDATORY PENDING {} → {} ({} effort units; not selected)",
+                    upgrade.artifact(), upgrade.targetVersion(), upgrade.effortCost()));
+        });
+
         if (!deferred.isEmpty()) {
             LOG.info("\n  ── DEFERRED / NO FIX ──");
             deferred.forEach(d -> {
+                if (plan.infeasibility().stream().flatMap(details -> details.mandatoryUpgrades().stream())
+                        .anyMatch(upgrade -> upgrade.artifact().equals(d.artifact().gav()))) return;
                 LOG.info("\n  ✘ DEFER    {}", d.artifact().gav());
                 LOG.info("    Rationale : {}", d.rationale());
             });
