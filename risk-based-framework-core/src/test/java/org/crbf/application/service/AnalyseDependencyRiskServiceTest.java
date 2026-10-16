@@ -5,15 +5,27 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.crbf.application.port.out.AnalyseReachabilityPort;
+import org.crbf.application.model.vex.VexFinding;
+import org.crbf.application.model.report.RiskReport;
+import org.crbf.application.model.report.GraphValidationStatus;
+import org.crbf.domain.model.optimisation.GlobalGraphValidation;
+import org.crbf.domain.model.optimisation.OptimisationStatus;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.crbf.application.port.out.DetectBreakingChangesPort;
 import org.crbf.application.port.out.ExportRiskReportPort;
 import org.crbf.application.port.out.ExportVexPort;
@@ -23,6 +35,7 @@ import org.crbf.application.port.out.LoadVulnerabilitiesPort;
 import org.crbf.application.port.out.OptimiseRemediationPort;
 import org.crbf.application.port.out.ResolveArtifactPort;
 import org.crbf.application.port.out.ResolveTransitiveDependenciesPort;
+import org.crbf.application.port.out.VulnerabilityLookupException;
 import org.crbf.domain.model.artifact.Artifact;
 import org.crbf.domain.model.artifact.DependencyPath;
 import org.crbf.domain.model.artifact.LocatedArtifact;
@@ -31,6 +44,7 @@ import org.crbf.domain.model.optimisation.RemediationCandidate;
 import org.crbf.domain.model.optimisation.RemediationPlan;
 import org.crbf.domain.model.reachability.ProjectCallGraph;
 import org.crbf.domain.model.reachability.ReachabilityStatus;
+import org.crbf.domain.model.reachability.VulnerabilityReachability;
 import org.crbf.domain.model.vulnerability.Vulnerability;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,6 +68,9 @@ class AnalyseDependencyRiskServiceTest {
     private LoadStabilityMetricsPort loadStabilityMetricsPort;
     private AnalyseReachabilityPort analyseReachabilityPort;
     private OptimiseRemediationPort optimiseRemediationPort;
+    private ExportVexPort exportVexPort;
+    private ResolveTransitiveDependenciesPort resolveTransitiveDependenciesPort;
+    private ExportRiskReportPort exportRiskReportPort;
 
     private AnalyseDependencyRiskService service;
 
@@ -65,6 +82,9 @@ class AnalyseDependencyRiskServiceTest {
         loadStabilityMetricsPort = mock(LoadStabilityMetricsPort.class);
         analyseReachabilityPort = mock(AnalyseReachabilityPort.class);
         optimiseRemediationPort = mock(OptimiseRemediationPort.class);
+        exportVexPort = mock(ExportVexPort.class);
+        resolveTransitiveDependenciesPort = mock(ResolveTransitiveDependenciesPort.class);
+        exportRiskReportPort = mock(ExportRiskReportPort.class);
 
         when(analyseReachabilityPort.buildCallGraph(any(), anyList()))
                 .thenReturn(ProjectCallGraph.empty());
@@ -82,11 +102,105 @@ class AnalyseDependencyRiskServiceTest {
                 loadStabilityMetricsPort,
                 analyseReachabilityPort,
                 mock(DetectBreakingChangesPort.class),
-                mock(ResolveTransitiveDependenciesPort.class),
+                resolveTransitiveDependenciesPort,
                 optimiseRemediationPort,
-                mock(RiskReportAssembler.class),
-                mock(ExportRiskReportPort.class),
-                mock(ExportVexPort.class));
+                new RiskReportAssembler(),
+                exportRiskReportPort,
+                exportVexPort);
+    }
+
+    @ParameterizedTest
+    @EnumSource(OptimisationStatus.class)
+    void shouldReportGlobalValidationAsNotRunWhenNoUpgradesAreSelected(OptimisationStatus status) {
+        Artifact dependency = Artifact.create("org.example", "library", "1.0.0", Scope.COMPILE);
+        stubResolution(dependency, Path.of("/repo/library-1.0.0.jar"));
+        when(loadVulnerabilitiesPort.loadVulnerabilities(dependency)).thenReturn(List.of());
+        when(optimiseRemediationPort.optimize(anyList())).thenReturn(
+                new RemediationPlan(List.of(), 0, 0, 0, status, GlobalGraphValidation.notRun()));
+
+        service.analyse(PROJECT_PATH, CLASSES_PATH,
+                List.of(new DependencyPath(List.of(ROOT, dependency))));
+
+        ArgumentCaptor<RiskReport> report = ArgumentCaptor.forClass(RiskReport.class);
+        verify(exportRiskReportPort).exportReport(report.capture(), eq(PROJECT_PATH.resolve("target")));
+        assertEquals(GraphValidationStatus.NOT_RUN, report.getValue().globalGraphValidation().status());
+        verify(resolveTransitiveDependenciesPort, never()).resolveGlobalGraph(anyList());
+    }
+
+    @Test
+    void shouldPreserveCompleteVulnerabilitySetsForEachResolvedDependencyVersion() {
+        Artifact first = Artifact.create("org.example", "library", "1.0.0", Scope.COMPILE);
+        Artifact second = Artifact.create("org.example", "library", "2.0.0", Scope.COMPILE);
+        Artifact clean = Artifact.create("org.example", "clean-library", "1.0.0", Scope.COMPILE);
+        List<Vulnerability> firstSource = List.of(
+                vulnerability("CVE-2026-1001", ANY_CVSS, ANY_EPSS),
+                vulnerability("CVE-2026-1002", ANY_CVSS, ANY_EPSS),
+                vulnerability("GHSA-AAAA-BBBB-CCCC", ANY_CVSS, ANY_EPSS));
+        List<Vulnerability> secondSource = List.of(vulnerability("CVE-2026-2001", ANY_CVSS, ANY_EPSS));
+        stubResolution(first, Path.of("/repo/library-1.0.0.jar"));
+        stubResolution(second, Path.of("/repo/library-2.0.0.jar"));
+        stubResolution(clean, Path.of("/repo/clean-library-1.0.0.jar"));
+        when(loadVulnerabilitiesPort.loadVulnerabilities(first)).thenReturn(firstSource);
+        when(loadVulnerabilitiesPort.loadVulnerabilities(second)).thenReturn(secondSource);
+        when(loadVulnerabilitiesPort.loadVulnerabilities(clean)).thenReturn(List.of());
+        when(analyseReachabilityPort.analyseReachability(any(), any(), anyList()))
+                .thenAnswer(invocation -> invocation.<List<Vulnerability>>getArgument(2).stream()
+                        .map(VulnerabilityReachability::unknown).toList());
+
+        service.analyse(PROJECT_PATH, CLASSES_PATH,
+                List.of(new DependencyPath(List.of(ROOT, first, second, clean))));
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<RemediationCandidate>> candidates = ArgumentCaptor.forClass(List.class);
+        verify(optimiseRemediationPort).optimize(candidates.capture());
+        Map<Artifact, Set<Vulnerability>> results = candidates.getValue().stream().collect(Collectors.toMap(
+                RemediationCandidate::artifact, c -> Set.copyOf(c.vulnerabilities())));
+        assertEquals(Map.of(first, Set.copyOf(firstSource), second, Set.copyOf(secondSource)), results);
+        verify(loadVulnerabilitiesPort).loadVulnerabilities(clean);
+    }
+
+    @Test
+    void shouldReportFailedLookupsWhilePreservingSuccessfulDependencyResults() {
+        Artifact failed = Artifact.create("org.example", "unavailable", "1.0.0", Scope.COMPILE);
+        Artifact successful = Artifact.create("org.example", "available", "1.0.0", Scope.COMPILE);
+        Vulnerability source = vulnerability("CVE-2026-1001", ANY_CVSS, ANY_EPSS);
+        stubResolution(failed, Path.of("/repo/unavailable-1.0.0.jar"));
+        stubResolution(successful, Path.of("/repo/available-1.0.0.jar"));
+        when(loadVulnerabilitiesPort.loadVulnerabilities(failed))
+                .thenThrow(new VulnerabilityLookupException(failed.gav(), 503));
+        when(loadVulnerabilitiesPort.loadVulnerabilities(successful)).thenReturn(List.of(source));
+        when(analyseReachabilityPort.analyseReachability(any(), any(), anyList()))
+                .thenReturn(List.of(VulnerabilityReachability.unknown(source)));
+
+        service.analyse(PROJECT_PATH, CLASSES_PATH,
+                List.of(new DependencyPath(List.of(ROOT, failed, successful))));
+
+        ArgumentCaptor<RiskReport> report = ArgumentCaptor.forClass(RiskReport.class);
+        verify(exportRiskReportPort).exportReport(report.capture(), eq(PROJECT_PATH.resolve("target")));
+        assertEquals(List.of(failed.gav()), report.getValue().vulnerabilityLookupFailures());
+        assertEquals(List.of(successful.gav()), report.getValue().findings().stream().map(f -> f.artifact()).toList());
+        assertEquals(List.of(source.id().value()), report.getValue().findings().get(0).vulnerabilities().stream()
+                .map(v -> v.id()).toList());
+    }
+
+    @Test
+    void shouldExportEveryVulnerabilityAsUnknownWhenArtifactJarCannotBeResolved() {
+        Artifact unresolved = Artifact.create("org.example", "library", "1.0.0", Scope.COMPILE);
+        Vulnerability first = vulnerability("CVE-2026-0001", ANY_CVSS, ANY_EPSS);
+        Vulnerability second = vulnerability("CVE-2026-0002", ANY_CVSS, ANY_EPSS);
+        when(resolveArtifactPort.resolve(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(Optional.empty());
+        when(loadVulnerabilitiesPort.loadVulnerabilities(unresolved)).thenReturn(List.of(first, second));
+
+        service.analyse(PROJECT_PATH, CLASSES_PATH, List.of(new DependencyPath(List.of(ROOT, unresolved))));
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<VexFinding>> findings = ArgumentCaptor.forClass(List.class);
+        verify(exportVexPort).exportVex(findings.capture(), eq(PROJECT_PATH.resolve("target")));
+        assertEquals(List.of(
+                new VexFinding(unresolved, VulnerabilityReachability.unknown(first)),
+                new VexFinding(unresolved, VulnerabilityReachability.unknown(second))),
+                findings.getValue());
     }
 
     @Test

@@ -1,0 +1,9 @@
+{
+  "vulns": [{
+    "id": "GHSA-gggg-hhhh-iiii",
+    "aliases": ["CVE-2026-2001"],
+    "summary": "Synthetic advisory for another resolved version",
+    "details": "Only the response to library 2.0.0 contains this record.",
+    "affected": [{"package": {"ecosystem": "Maven", "name": "org.example:library"}, "versions": ["2.0.0"]}]
+  }]
+}

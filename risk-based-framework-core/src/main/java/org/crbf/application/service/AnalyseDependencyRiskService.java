@@ -343,7 +343,7 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
 
                 if (upgrades.isEmpty()) {
                         logger.logGlobalValidationNoUpgrades();
-                        return GlobalGraphValidation.clean(List.of());
+                        return GlobalGraphValidation.notRun();
                 }
 
                 List<Artifact> fixArtifacts = upgrades.stream()

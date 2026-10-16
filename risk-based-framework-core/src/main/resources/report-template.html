@@ -4,931 +4,1383 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Contextual Risk Analysis Dashboard</title>
+  <meta name="color-scheme" content="light">
+  <title>CRBF · Security analysis</title>
   <style>
-    *,
-    *::before,
-    *::after {
+    :root {
+      --ink: #19303f;
+      --muted: #647585;
+      --line: #dfe7ed;
+      --bg: #f4f7fa;
+      --accent: #176d68;
+      --nav: #172e3b;
+      --red: #a14038;
+      --amber: #886324;
+      --radius: 11px
+    }
+
+    * {
       box-sizing: border-box
     }
 
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 24px
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #f0f4f8;
-      color: #1e293b;
       margin: 0;
-      padding: 16px 24px;
-      font-size: 14px;
-      line-height: 1.5
+      background: var(--bg);
+      color: var(--ink);
+      font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif
     }
 
-    /* ── Header ────────────────────────────────────────────────── */
-    .header {
-      background: linear-gradient(135deg, #1e3a5f, #0f172a);
-      color: white;
-      padding: 24px 28px;
-      border-radius: 12px;
-      margin-bottom: 16px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, .2)
+    a {
+      color: var(--accent);
+      text-underline-offset: 3px
     }
 
-    .header h1 {
-      margin: 0 0 4px;
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: -.3px
+    button,
+    input,
+    select {
+      font: inherit
     }
 
-    .header-project {
-      font-size: 13px;
-      opacity: .65;
-      margin-top: 4px
+    button,
+    select,
+    summary {
+      cursor: pointer
     }
 
-    .header-meta {
+    a:focus-visible,
+    button:focus-visible,
+    summary:focus-visible,
+    input:focus-visible,
+    select:focus-visible {
+      outline: 3px solid #76bcb5;
+      outline-offset: 3px
+    }
+
+    .skip {
+      position: fixed;
+      top: -100px;
+      background: white;
+      padding: 10px;
+      z-index: 10
+    }
+
+    .skip:focus {
+      top: 10px
+    }
+
+    .sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: 222px;
+      background: var(--nav);
+      color: #d4dfe5;
+      padding: 30px 20px;
       display: flex;
-      gap: 20px;
-      margin-top: 12px;
-      font-size: 12px;
-      opacity: .6;
-      flex-wrap: wrap;
-      border-top: 1px solid rgba(255, 255, 255, .1);
-      padding-top: 12px
+      flex-direction: column
     }
 
-    /* ── Summary cards ─────────────────────────────────────────── */
-    .cards {
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      color: white;
+      font-weight: 750;
+      font-size: 22px;
+      letter-spacing: .02em
+    }
+
+    .brand-mark {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 12px;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border: 1px solid #55727f;
+      border-radius: 8px;
+      color: #9ad8c9;
+      font-size: 18px
+    }
+
+    .subtitle {
+      font-size: 11px;
+      color: #96aeb9;
+      margin: 12px 0 34px;
+      max-width: 170px
+    }
+
+    .nav-label,
+    .eyebrow {
+      font-size: 10px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      font-weight: 700
+    }
+
+    .nav-label {
+      color: #96aeb9;
+      margin: 0 10px 10px
+    }
+
+    nav a {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      color: #d4dfe5;
+      text-decoration: none;
+      padding: 11px 10px;
+      border-radius: 7px;
+      font-size: 12px;
+      margin: 3px 0
+    }
+
+    nav a span {
+      font-size: 10px;
+      color: #91a8b4
+    }
+
+    nav a:hover,
+    nav a.active {
+      background: #284653;
+      color: white
+    }
+
+    nav a.active {
+      box-shadow: inset 3px 0 #8bd0bf
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      border-top: 1px solid #3b5460;
+      padding-top: 17px;
+      font-size: 11px;
+      color: #96aeb9
+    }
+
+    .sidebar-footer strong {
+      display: block;
+      color: #d4dfe5;
+      font-weight: 500
+    }
+
+    main {
+      margin-left: 222px;
+      padding: 36px 42px 60px;
+      max-width: 1600px
+    }
+
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      align-items: start;
+      margin-bottom: 28px
+    }
+
+    .eyebrow {
+      color: var(--accent);
+      margin: 0 0 6px
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 30px;
+      line-height: 1.2;
+      letter-spacing: -.035em;
+      overflow-wrap: anywhere
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 21px;
+      letter-spacing: -.02em;
+      line-height: 1.3
+    }
+
+    h3 {
+      font-size: 14px;
+      margin: 0 0 12px
+    }
+
+    p {
+      margin: 0 0 12px
+    }
+
+    .muted,
+    .help,
+    .page-meta {
+      color: var(--muted);
+      font-size: 12px
+    }
+
+    .header-tag {
+      font-size: 11px;
+      padding: 6px 10px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: white;
+      white-space: nowrap
+    }
+
+    .section {
+      margin-bottom: 38px;
+      scroll-margin-top: 24px
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      align-items: center;
       margin-bottom: 16px
     }
 
-    .card {
-      background: white;
-      border-radius: 10px;
-      padding: 16px;
-      text-align: center;
-      box-shadow: 0 2px 6px rgba(0, 0, 0, .07);
-      border-top: 3px solid transparent
+    .section-head p {
+      font-size: 12px;
+      color: var(--muted);
+      margin: 5px 0 0
     }
 
-    .card .val {
-      font-size: 28px;
+    .count {
+      font-size: 12px;
+      color: var(--muted)
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px
+    }
+
+    .card,
+    .panel {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 20px
+    }
+
+    .card-label {
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 550
+    }
+
+    .card-value {
+      font-size: 32px;
+      line-height: 1.3;
       font-weight: 700;
-      line-height: 1
+      letter-spacing: -.04em;
+      margin: 8px 0 3px
     }
 
-    .card .lbl {
+    .card-note {
       font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .5px;
-      color: #64748b;
-      margin-top: 4px
+      color: var(--muted)
     }
 
-    .card.red {
-      border-top-color: #ef4444
+    .overview-bottom {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 14px;
+      margin-top: 14px
     }
 
-    .card.red .val {
-      color: #dc2626
-    }
-
-    .card.amber {
-      border-top-color: #f59e0b
-    }
-
-    .card.amber .val {
-      color: #d97706
-    }
-
-    .card.green {
-      border-top-color: #10b981
-    }
-
-    .card.green .val {
-      color: #059669
-    }
-
-    .card.blue {
-      border-top-color: #3b82f6
-    }
-
-    .card.blue .val {
-      color: #2563eb
-    }
-
-    .card.grey {
-      border-top-color: #94a3b8
-    }
-
-    .card.grey .val {
-      color: #475569
-    }
-
-    /* ── Alert ─────────────────────────────────────────────────── */
-    .alert {
-      padding: 12px 16px;
-      border-radius: 8px;
-      margin-bottom: 14px;
-      font-size: 13px;
-      font-weight: 500
-    }
-
-    .alert.err {
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      color: #991b1b
-    }
-
-    /* ── Section ───────────────────────────────────────────────── */
-    .section {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, .07);
-      margin-bottom: 16px;
-      overflow: hidden
-    }
-
-    .sec-hdr {
-      padding: 14px 20px;
-      background: #f8fafc;
-      border-bottom: 1px solid #e2e8f0;
+    .panel-heading {
       display: flex;
+      justify-content: space-between;
       align-items: center;
-      gap: 8px
+      gap: 10px;
+      margin-bottom: 14px
     }
 
-    .sec-hdr h2 {
-      margin: 0;
-      font-size: 15px;
+    .panel-heading h3 {
+      margin: 0
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px
+    }
+
+    .metric+.metric {
+      border-left: 1px solid var(--line);
+      padding-left: 16px
+    }
+
+    .metric-value {
+      display: block;
+      font-size: 23px;
+      font-weight: 650;
+      letter-spacing: -.02em
+    }
+
+    .metric-value.unavailable {
+      font-size: 14px;
+      line-height: 1.6;
+      margin: 7px 0
+    }
+
+    .metric-value {
+      overflow-wrap: anywhere
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: var(--muted)
+    }
+
+    .meter {
+      height: 7px;
+      display: flex;
+      overflow: hidden;
+      border-radius: 7px;
+      background: #eaf0f3;
+      margin: 18px 0 10px
+    }
+
+    .meter span {
+      background: #40897e
+    }
+
+    .meter .probable {
+      background: #a2c4bc
+    }
+
+    .meter .unknown {
+      background: #cbd6df
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 11px
+    }
+
+    .legend i {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #40897e;
+      margin-right: 4px
+    }
+
+    .legend .probable i {
+      background: #a2c4bc
+    }
+
+    .legend .unknown i {
+      background: #cbd6df
+    }
+
+    .notice {
+      padding: 18px 20px;
+      border: 1px solid #d0e0da;
+      border-left: 3px solid var(--accent);
+      border-radius: 9px;
+      background: #f0f7f4;
+      margin-bottom: 16px
+    }
+
+    .notice h3 {
+      margin-bottom: 4px
+    }
+
+    .notice p {
+      font-size: 12px;
+      color: var(--muted);
+      margin: 0
+    }
+
+    .notice.warning {
+      background: #fffaf0;
+      border-color: #eadfc9;
+      border-left-color: var(--amber)
+    }
+
+    .notice.danger {
+      background: #fcf3f2;
+      border-color: #eacfc9;
+      border-left-color: var(--red)
+    }
+
+    .notice.neutral {
+      background: #f9fbfc;
+      border-color: var(--line);
+      border-left-color: #92a2ae
+    }
+
+    .notice .metrics {
+      margin-top: 18px
+    }
+
+    .status {
+      display: inline-block;
+      padding: 3px 7px;
+      border-radius: 4px;
+      line-height: 1.5;
+      background: #edf2f5;
+      color: #566977;
+      font-size: 11px;
       font-weight: 600
     }
 
-    .sec-hdr .cnt {
-      font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 20px;
-      background: #e2e8f0;
-      color: #475569;
-      font-weight: 500
+    .status.attention {
+      background: #f8e9e6;
+      color: #963b35
     }
 
-    .sec-body {
-      padding: 16px 20px
+    .status.good {
+      background: #eaf4ee;
+      color: #2d694e
     }
 
-    /* ── Action items ──────────────────────────────────────────── */
-    .action {
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      margin-bottom: 12px;
-      overflow: hidden
+    .status.caution {
+      background: #f9f0df;
+      color: #805d26
     }
 
-    .action:last-child {
-      margin-bottom: 0
-    }
-
-    .action-hdr {
+    .controls {
       display: flex;
-      align-items: flex-start;
+      align-items: end;
       gap: 12px;
-      padding: 14px 16px;
-      cursor: pointer;
-      user-select: none
+      flex-wrap: wrap;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin: 28px 0
     }
 
-    .action-hdr:hover {
-      background: #f8fafc
-    }
-
-    .step-num {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
+    .control {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
+      flex-direction: column;
+      gap: 5px;
+      min-width: 145px
+    }
+
+    .control:first-child {
+      flex: 1;
+      min-width: 210px
+    }
+
+    label {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600
+    }
+
+    input,
+    select {
+      padding: 8px 10px;
+      border: 1px solid #d3dde4;
+      border-radius: 6px;
+      background: white;
+      color: var(--ink);
+      max-width: 100%;
+      min-width: 0
+    }
+
+    input::placeholder {
+      color: #8b9aa6
+    }
+
+    button {
+      padding: 8px 12px;
+      border: 1px solid #d3dde4;
+      border-radius: 6px;
+      background: white;
+      color: var(--ink);
+      font-size: 12px
+    }
+
+    button:hover {
+      background: #f1f5f7
+    }
+
+    .filter-result {
+      font-size: 11px;
+      color: var(--muted);
+      width: 100%
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 10px
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left
+    }
+
+    th {
+      padding: 12px 16px;
+      color: var(--muted);
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      font-weight: 650;
+      white-space: nowrap;
+      background: #f9fbfc
+    }
+
+    td {
+      padding: 15px 16px;
       font-size: 12px;
-      flex-shrink: 0;
-      margin-top: 2px
+      border-top: 1px solid var(--line);
+      vertical-align: top
     }
 
-    .step-num.r {
-      background: #fee2e2;
-      color: #b91c1c
+    tbody tr:hover {
+      background: #fcfdfd
     }
 
-    .step-num.a {
-      background: #fef3c7;
-      color: #b45309
+    .dependency {
+      font-size: 13px;
+      font-weight: 650;
+      color: var(--ink);
+      overflow-wrap: anywhere
     }
 
-    .step-num.g {
-      background: #f0fdf4;
-      color: #166534
+    .group {
+      font-size: 11px;
+      color: var(--muted);
+      overflow-wrap: anywhere
     }
 
-    .action-main {
+    .mono,
+    code,
+    pre {
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace
+    }
+
+    .mono {
+      font-size: 11px;
+      overflow-wrap: anywhere
+    }
+
+    .version {
+      font-size: 11px;
+      margin-top: 4px
+    }
+
+    .version strong {
+      color: var(--accent);
+      font-weight: 650
+    }
+
+    .number {
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap
+    }
+
+    .risk-number {
+      font-size: 14px;
+      font-weight: 700
+    }
+
+    .row-details td {
+      padding: 0 16px 12px
+    }
+
+    .row-details summary {
+      font-size: 11px;
+      color: var(--accent);
+      padding: 4px 0
+    }
+
+    .row-details details[open] {
+      padding: 10px 12px;
+      border-radius: 6px;
+      background: #f8fafb
+    }
+
+    .row-details p {
+      font-size: 12px;
+      margin: 8px 0
+    }
+
+    .inline-links {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      font-size: 11px;
+      margin-top: 10px
+    }
+
+    .subheading {
+      font-size: 12px;
+      font-weight: 650;
+      margin: 22px 0 10px
+    }
+
+    .empty {
+      padding: 26px;
+      border: 1px dashed #d4dfe6;
+      border-radius: 8px;
+      background: white;
+      color: var(--muted);
+      text-align: center;
+      font-size: 12px
+    }
+
+    details.block {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: white;
+      margin-bottom: 10px
+    }
+
+    details.block>summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 17px 20px;
+      list-style: none
+    }
+
+    details.block>summary::-webkit-details-marker {
+      display: none
+    }
+
+    details.block>summary:after {
+      content: '+';
+      font-size: 18px;
+      color: #8094a1
+    }
+
+    details.block[open]>summary:after {
+      content: '−'
+    }
+
+    details.block[open]>summary {
+      border-bottom: 1px solid var(--line)
+    }
+
+    .summary-main {
       flex: 1;
       min-width: 0
     }
 
-    .action-title {
-      font-size: 14px;
-      font-weight: 600;
+    .summary-meta {
       display: flex;
-      align-items: center;
-      gap: 8px;
+      gap: 15px;
       flex-wrap: wrap;
-      margin-bottom: 4px
-    }
-
-    .action-sub {
-      font-size: 12px;
-      color: #64748b;
-      margin-bottom: 6px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-wrap: wrap
-    }
-
-    .action-metrics {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap
-    }
-
-    .metric {
       font-size: 11px;
-      color: #475569;
-      background: #f1f5f9;
-      padding: 2px 8px;
-      border-radius: 4px
+      color: var(--muted);
+      margin-top: 4px
     }
 
-    .action-body {
-      padding: 0 16px 16px;
-      border-top: 1px solid #f1f5f9;
+    .detail-body {
+      padding: 20px
+    }
+
+    .detail-body details {
+      margin-top: 12px
+    }
+
+    .detail-body summary {
+      font-size: 12px;
+      color: var(--accent)
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px
+    }
+
+    .detail-grid>div {
+      min-width: 0
+    }
+
+    .code-list {
+      list-style: none;
+      padding: 0;
+      margin: 10px 0;
+      max-height: 250px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 6px
+    }
+
+    .code-list li {
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: 11px;
+      padding: 8px 10px;
+      border-bottom: 1px solid #edf1f4;
+      overflow-wrap: anywhere
+    }
+
+    .local-search {
+      width: 100%;
+      font-size: 12px;
+      margin: 10px 0
+    }
+
+    .code-list li[hidden] {
       display: none
     }
 
-    .action-body.open {
-      display: block
-    }
-
-    .chev {
+    .raw-summary {
       font-size: 11px;
-      color: #94a3b8;
-      margin-top: 8px;
-      transition: transform .2s;
-      flex-shrink: 0
-    }
-
-    .chev.open {
-      transform: rotate(180deg)
-    }
-
-    /* ── Reachability dot ──────────────────────────────────────── */
-    .rdot {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      margin-right: 5px;
-      flex-shrink: 0;
-      vertical-align: middle
-    }
-
-    .rdot.confirmed {
-      background: #ef4444
-    }
-
-    .rdot.probable {
-      background: #f97316
-    }
-
-    .rdot.unknown {
-      background: #eab308
-    }
-
-    .rdot.unreachable {
-      background: #22c55e
-    }
-
-    /* ── Badges ────────────────────────────────────────────────── */
-    .badge {
-      padding: 3px 10px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 700;
-      display: inline-block
-    }
-
-    .badge.MANDATORY {
-      background: #fee2e2;
-      color: #b91c1c;
-      border: 1px solid #fca5a5
-    }
-
-    .badge.RECOMMENDED {
-      background: #fef3c7;
-      color: #92400e;
-      border: 1px solid #fcd34d
-    }
-
-    .badge.MIGRATION_AVAILABLE {
-      background: #f5f3ff;
-      color: #5b21b6;
-      border: 1px solid #c4b5fd
-    }
-
-    .badge.DEFER {
-      background: #f0fdf4;
-      color: #166534;
-      border: 1px solid #6ee7b7
-    }
-
-    .compat {
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 600
-    }
-
-    .compat.BINARY_INCOMPATIBLE {
-      background: #fef2f2;
-      color: #b91c1c
-    }
-
-    .compat.SOURCE_INCOMPATIBLE {
-      background: #fff7ed;
-      color: #9a3412
-    }
-
-    .compat.COMPATIBLE {
-      background: #f0fdf4;
-      color: #166534
-    }
-
-    .compat.UNKNOWN {
-      background: #f1f5f9;
-      color: #475569
-    }
-
-    .sev {
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-size: 11px;
-      font-weight: 600
-    }
-
-    .sev.CRITICAL {
-      background: #fce7e7;
-      color: #7f1d1d
-    }
-
-    .sev.HIGH {
-      background: #fef3c7;
-      color: #78350f
-    }
-
-    .sev.MEDIUM {
-      background: #fff7ed;
-      color: #9a3412
-    }
-
-    .sev.LOW {
-      background: #ecfdf5;
-      color: #064e3b
-    }
-
-    .sev.UNKNOWN {
-      background: #f1f5f9;
-      color: #475569
-    }
-
-    /* ── Notes ─────────────────────────────────────────────────── */
-    .note {
-      border-radius: 6px;
-      padding: 10px 14px;
-      font-size: 12px;
-      margin-top: 10px
-    }
-
-    .note.info {
-      background: #eff6ff;
-      border: 1px solid #bfdbfe;
-      color: #1e40af
-    }
-
-    .note.warn {
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      color: #991b1b
-    }
-
-    .note.ok {
-      background: #f0fdf4;
-      border: 1px solid #bbf7d0;
-      color: #166534
-    }
-
-    .note strong {
-      display: block;
-      margin-bottom: 3px;
-      font-size: 13px
-    }
-
-    /* ── Code snippet ──────────────────────────────────────────── */
-    .snippet {
-      background: #1e293b;
-      color: #e2e8f0;
-      border-radius: 8px;
-      padding: 12px 14px;
-      font-family: monospace;
-      font-size: 12px;
-      margin-top: 10px;
-      position: relative
-    }
-
-    .copy-btn {
-      position: absolute;
-      right: 8px;
-      top: 8px;
-      background: #334155;
-      border: none;
-      color: #94a3b8;
-      cursor: pointer;
-      border-radius: 4px;
-      padding: 3px 8px;
-      font-size: 11px
-    }
-
-    .copy-btn:hover {
-      background: #3b82f6;
-      color: white
-    }
-
-    .xt {
-      color: #93c5fd
-    }
-
-    .xv {
-      color: #86efac
-    }
-
-    /* ── CVE cards ─────────────────────────────────────────────── */
-    .cve-card {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
+      line-height: 1.8;
       padding: 12px;
-      margin-bottom: 8px
+      border-radius: 6px;
+      background: #f8fafb;
+      overflow-wrap: anywhere
+    }
+
+    .limitations-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px
+    }
+
+    .limitation-card {
+      padding: 16px;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 9px
+    }
+
+    .limitation-card strong {
+      display: block;
+      font-size: 23px;
+      font-weight: 650
+    }
+
+    .limitation-card p {
+      font-size: 11px;
+      color: var(--muted);
+      margin: 3px 0 0
+    }
+
+    .limitation-list {
+      padding-left: 18px;
+      font-size: 12px
+    }
+
+    .limitation-list li {
+      padding: 8px 0;
+      overflow-wrap: anywhere
+    }
+
+    .inventory {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      max-height: 350px;
+      overflow: auto
+    }
+
+    .inventory div {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      font-size: 11px;
+      overflow-wrap: anywhere
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      flex-wrap: wrap;
+      font-size: 11px;
+      color: var(--muted);
+      padding-top: 20px;
+      border-top: 1px solid var(--line)
+    }
+
+    /* Evidence panels share the same restrained typography and spacing. */
+    .cve-card {
+      padding: 18px 0;
+      border-bottom: 1px solid var(--line)
+    }
+
+    .cve-card:first-child {
+      padding-top: 0
     }
 
     .cve-card:last-child {
-      margin-bottom: 0
+      border-bottom: 0
     }
 
     .cve-hdr {
       display: flex;
-      align-items: flex-start;
       justify-content: space-between;
-      gap: 8px;
-      margin-bottom: 4px
+      align-items: start;
+      gap: 12px
+    }
+
+    .cve-hdr>div {
+      min-width: 0;
+      overflow-wrap: anywhere
+    }
+
+    .cve-sum,
+    .stability-card-title {
+      overflow-wrap: anywhere
     }
 
     .cve-id {
-      font-family: monospace;
       font-size: 13px;
-      font-weight: 700;
-      color: #2563eb;
-      text-decoration: none
+      font-weight: 650
     }
 
-    .cve-id:hover {
-      text-decoration: underline
+    .sev,
+    .alias {
+      font-size: 10px;
+      color: #5f7180
+    }
+
+    .sev.CRITICAL {
+      color: var(--red);
+      font-weight: 650
+    }
+
+    .alias {
+      margin-right: 8px
     }
 
     .cve-sum {
       font-size: 12px;
-      color: #475569;
-      margin: 4px 0 6px
+      margin: 10px 0
     }
 
     .cve-meta {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 9px 18px;
       font-size: 11px;
-      color: #64748b
-    }
-
-    .alias {
-      background: #dbeafe;
-      color: #1e40af;
-      padding: 1px 6px;
-      border-radius: 8px;
-      font-size: 11px;
-      font-family: monospace
+      color: var(--muted);
+      padding: 10px 12px;
+      border-radius: 6px;
+      background: #f7fafb
     }
 
     .epss-bar {
-      display: inline-flex;
-      width: 50px;
-      height: 5px;
-      vertical-align: middle;
-      border-radius: 3px;
-      background: #e2e8f0;
-      overflow: hidden;
-      margin-left: 4px
+      display: none
     }
 
-    /* ── Risk calculation ──────────────────────────────────────── */
     .rc {
-      margin-top: 8px;
-      border-top: 1px solid #e2e8f0;
-      padding-top: 8px
+      margin-top: 12px
     }
 
     .rc-summary {
-      font-size: 11px;
-      font-weight: 600;
-      color: #475569;
-      cursor: pointer;
-      user-select: none
+      font-size: 12px;
+      color: var(--accent)
     }
 
-    .rc-summary:hover {
-      color: #2563eb
+    .rc-table {
+      margin-top: 10px;
+      background: white
+    }
+
+    .rc-table td {
+      font-size: 11px;
+      padding: 8px 10px
     }
 
     .rc-note {
       font-size: 11px;
-      color: #92400e;
-      background: #fffbeb;
-      border: 1px solid #fde68a;
-      border-radius: 4px;
-      padding: 6px 8px;
-      margin: 8px 0 0
+      color: var(--muted);
+      margin: 10px 0
     }
 
-    .rc-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 6px;
-      font-size: 11px
+    .rc-total {
+      background: #edf5f2;
+      font-weight: 650
     }
 
-    .rc-table td {
-      padding: 3px 6px;
-      border-bottom: 1px solid #f1f5f9
-    }
-
-    .rc-label {
-      color: #64748b;
-      font-weight: 600;
-      white-space: nowrap
-    }
-
-    .rc-op,
     .rc-val {
-      font-family: ui-monospace, monospace;
-      text-align: right;
-      color: #475569;
-      white-space: nowrap
+      font-variant-numeric: tabular-nums
     }
 
-    .rc-subtotal td,
-    .rc-total td {
-      font-weight: 700;
-      color: #1e293b;
-      border-top: 1px solid #cbd5e1;
-      border-bottom: none
-    }
-
-    .rc-total td {
-      border-top: 2px solid #94a3b8
-    }
-
-    /* ── Reachable methods ─────────────────────────────────────── */
-    .methods-list {
-      list-style: none;
-      padding: 0;
-      margin: 4px 0 0
-    }
-
-    .methods-list li {
+    .snippet {
+      position: relative;
+      background: #172e3b;
+      color: #dfebef;
+      border-radius: 8px;
+      padding: 17px 17px 50px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
       font-size: 11px;
-      font-family: monospace;
-      color: #475569;
-      padding: 3px 0;
-      border-bottom: 1px solid #f1f5f9
+      line-height: 1.8;
+      margin-top: 8px
     }
 
-    .methods-list li:last-child {
-      border-bottom: none
+    .copy-btn {
+      position: absolute;
+      bottom: 10px;
+      left: 16px;
+      background: #284653;
+      color: white;
+      border-color: #55717d;
+      font-family: inherit
     }
 
-    /* ── Breaking changes ──────────────────────────────────────── */
+    .stability-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px
+    }
+
+    .stability-card {
+      padding: 15px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fafcfd
+    }
+
+    .stability-card-title {
+      font-size: 12px;
+      font-weight: 650;
+      margin-bottom: 14px
+    }
+
+    .stability-row {
+      margin-bottom: 12px
+    }
+
+    .stability-label,
+    .stability-desc {
+      display: block;
+      font-size: 10px;
+      color: var(--muted)
+    }
+
+    .stability-value {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      overflow-wrap: anywhere
+    }
+
+    .stability-desc {
+      margin-top: 3px
+    }
+
+    .score-bar {
+      height: 4px;
+      background: #e3ebe9;
+      border-radius: 4px;
+      margin: 6px 0
+    }
+
+    .score-fill {
+      height: 100%;
+      background: #709c8f
+    }
+
     .bc-search {
       width: 100%;
-      padding: 7px 10px;
-      border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      font-size: 12px;
-      font-family: inherit;
       margin-bottom: 10px;
-      outline: none
-    }
-
-    .bc-search:focus {
-      border-color: #93c5fd;
-      box-shadow: 0 0 0 2px rgba(147, 197, 253, .3)
+      font-size: 12px
     }
 
     .bc-group {
-      margin-bottom: 10px
+      margin-top: 10px
     }
 
-    .bc-group:last-child {
-      margin-bottom: 0
-    }
-
-    .bc-group-hdr {
+    .bc-group-hdr,
+    .bc-subgroup-hdr {
+      font-size: 11px;
+      font-weight: 650;
       display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 10px;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      font-size: 12px;
-      font-weight: 600;
-      margin-bottom: 4px
-    }
-
-    .bc-type-badge {
-      font-size: 10px;
-      font-weight: 700;
-      padding: 1px 6px;
-      border-radius: 3px;
-      flex-shrink: 0
-    }
-
-    .bc-type-badge.BINARY {
-      background: #fee2e2;
-      color: #991b1b
-    }
-
-    .bc-type-badge.SOURCE {
-      background: #fff7ed;
-      color: #9a3412
+      gap: 10px;
+      flex-wrap: wrap
     }
 
     .bc-group-cnt {
-      font-size: 11px;
-      color: #94a3b8;
-      margin-left: auto;
+      color: var(--muted);
       font-weight: 400
     }
 
-    .bc-subgroup {
-      margin: 4px 0 4px 12px
-    }
-
     .bc-subgroup-hdr {
-      font-size: 11px;
-      font-weight: 600;
-      color: #64748b;
-      padding: 3px 0;
-      border-bottom: 1px solid #f1f5f9;
-      margin-bottom: 3px
+      margin: 8px 0 4px;
+      color: var(--muted)
     }
 
     .bc-item {
+      display: none;
+      padding: 7px 10px;
+      border-bottom: 1px solid #e7edf1;
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
       font-size: 11px;
-      font-family: monospace;
-      color: #475569;
-      padding: 3px 6px;
-      border-radius: 3px;
-      word-break: break-all;
-      display: none
+      overflow-wrap: anywhere
     }
 
     .bc-item.visible {
       display: block
     }
 
-    .bc-item:hover {
-      background: #f8fafc
-    }
-
     .bc-empty {
-      font-size: 12px;
-      color: #94a3b8;
-      font-style: italic;
-      padding: 4px 0;
       display: none
     }
 
     .bc-empty.visible {
-      display: block
-    }
-
-    /* ── Stability ─────────────────────────────────────────────── */
-    .stability-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-      gap: 12px;
-      margin-top: 8px
-    }
-
-    .stability-card {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 12px
-    }
-
-    .stability-card-title {
-      font-size: 12px;
-      font-weight: 700;
-      color: #334155;
-      margin-bottom: 10px;
-      padding-bottom: 6px;
-      border-bottom: 1px solid #e2e8f0
-    }
-
-    .stability-row {
-      margin-bottom: 8px
-    }
-
-    .stability-row:last-child {
-      margin-bottom: 0
-    }
-
-    .stability-label {
-      font-size: 10px;
-      font-weight: 700;
-      color: #94a3b8;
-      text-transform: uppercase;
-      letter-spacing: .4px;
-      display: block
-    }
-
-    .stability-value {
-      font-size: 13px;
-      font-weight: 600;
-      color: #1e293b;
       display: block;
-      margin-top: 1px
+      font-size: 12px;
+      color: var(--muted)
     }
 
-    .stability-desc {
+    .sub {
+      font-size: 12px;
+      color: var(--ink);
+      margin: 12px 0
+    }
+
+    .back-link {
       font-size: 11px;
-      color: #94a3b8;
-      display: block;
-      margin-top: 1px;
-      line-height: 1.3
+      white-space: nowrap
     }
 
-    .score-bar {
-      height: 5px;
-      background: #e2e8f0;
-      border-radius: 3px;
-      overflow: hidden;
-      margin-top: 4px
+    .plan-metrics {
+      grid-template-columns: repeat(4, minmax(0, 1fr))
     }
 
-    .score-fill {
-      height: 100%;
-      border-radius: 3px
+    @media(max-width:1100px) {
+      .plan-metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr))
+      }
+
+      .sidebar {
+        width: 190px;
+        padding: 25px 14px
+      }
+
+      main {
+        margin-left: 190px;
+        padding: 28px 24px
+      }
+
+      .overview-bottom {
+        grid-template-columns: 1fr
+      }
+
+      .card {
+        padding: 16px
+      }
+
+      .card-value {
+        font-size: 28px
+      }
     }
 
-    .score-fill.low {
-      background: #ef4444
+    @media(max-width:760px) {
+      html {
+        scroll-padding-top: 110px
+      }
+
+      .sidebar {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        width: 100%;
+        padding: 12px 16px;
+        display: block
+      }
+
+      .brand {
+        font-size: 16px
+      }
+
+      .brand-mark {
+        width: 25px;
+        height: 25px;
+        font-size: 13px
+      }
+
+      .sidebar .subtitle,
+      .nav-label,
+      .sidebar-footer {
+        display: none
+      }
+
+      nav {
+        display: flex;
+        overflow-x: auto;
+        gap: 4px;
+        margin-top: 8px
+      }
+
+      nav a {
+        font-size: 11px;
+        padding: 6px 9px;
+        white-space: nowrap;
+        margin: 0
+      }
+
+      nav a span {
+        display: none
+      }
+
+      main {
+        margin: 0;
+        padding: 24px 16px
+      }
+
+      h1 {
+        font-size: 25px
+      }
+
+      .header-tag {
+        display: none
+      }
+
+      .cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px
+      }
+
+      .card-value {
+        font-size: 27px
+      }
+
+      .controls {
+        gap: 10px
+      }
+
+      .control,
+      .control:first-child {
+        flex: 1 1 42%;
+        min-width: 0
+      }
+
+      .control:first-child {
+        flex-basis: 100%
+      }
+
+      .detail-grid,
+      .stability-grid {
+        grid-template-columns: 1fr
+      }
+
+      .limitations-grid {
+        grid-template-columns: 1fr 1fr
+      }
+
+      .inventory {
+        grid-template-columns: 1fr
+      }
+
+      .detail-body {
+        padding: 14px
+      }
+
+      details.block>summary {
+        padding: 14px
+      }
+
+      .metrics {
+        gap: 10px
+      }
+
+      .metric+.metric {
+        padding-left: 10px
+      }
+
+      .metric-value {
+        font-size: 20px
+      }
+
+      .table-wrap table {
+        min-width: 660px
+      }
+
+      .section {
+        scroll-margin-top: 110px
+      }
+
+      .section-head {
+        align-items: start
+      }
+
+      .count {
+        text-align: right
+      }
+
+      .notice {
+        padding: 15px
+      }
+
+      .rc {
+        overflow-x: auto
+      }
     }
 
-    .score-fill.mid {
-      background: #f59e0b
+    @media(prefers-reduced-motion:reduce) {
+      html {
+        scroll-behavior: auto
+      }
     }
 
-    .score-fill.high {
-      background: #22c55e
-    }
+    @media print {
 
-    /* ── Graph validation ──────────────────────────────────────── */
-    .gv-status {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 13px;
-      margin-bottom: 12px
-    }
+      .sidebar,
+      .controls,
+      button,
+      .local-search {
+        display: none !important
+      }
 
-    .gv-status.CLEAN {
-      background: #f0fdf4;
-      color: #166534
-    }
+      main {
+        margin: 0;
+        padding: 0;
+        max-width: none
+      }
 
-    .gv-status.HAS_RISKS {
-      background: #fefce8;
-      color: #854d0e
-    }
+      body {
+        background: white
+      }
 
-    .gv-status.UNAVAILABLE,
-    .gv-status.NOT_RUN {
-      background: #f1f5f9;
-      color: #475569
-    }
+      .table-wrap,
+      .code-list,
+      .inventory {
+        max-height: none;
+        overflow: visible
+      }
 
-    /* ── Misc ──────────────────────────────────────────────────── */
-    .deps-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 6px
-    }
+      .cards {
+        grid-template-columns: repeat(4, 1fr)
+      }
 
-    .dep-item {
-      font-size: 12px;
-      font-family: monospace;
-      color: #475569;
-      background: #f8fafc;
-      padding: 6px 10px;
-      border-radius: 6px;
-      border: 1px solid #e2e8f0
-    }
-
-    .mono {
-      font-family: ui-monospace, 'Cascadia Code', monospace;
-      font-size: 12px
-    }
-
-    h4.sub {
-      margin: 14px 0 8px;
-      font-size: 13px;
-      color: #334155
+      details.block {
+        break-inside: avoid
+      }
     }
   </style>
 </head>
 
 <body>
-
-  <div class="header">
-    <h1>Contextual Risk Analysis Dashboard</h1>
-    <div class="header-project" id="hdr-project"></div>
-    <div class="header-meta" id="hdr-meta"></div>
-  </div>
-
-  <div id="mandatory-alert" class="alert err" style="display:none">
-    &#9888; <span id="alert-text"></span>
-  </div>
-
-  <div class="cards" id="cards"></div>
-
-  <div class="section">
-    <div class="sec-hdr">
-      <h2>Remediation Action Plan</h2><span class="cnt" id="plan-cnt">0 actions</span>
+  <a class="skip" href="#overview">Skip to report</a>
+  <aside class="sidebar" aria-label="Report navigation">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">C</span>CRBF</div>
+    <p class="subtitle">Contextualised Risk-Based Framework</p>
+    <div class="nav-label">Project analysis</div>
+    <nav><a class="active" href="#overview"><span>01</span>Overview</a><a href="#remediation"><span>02</span>Remediation
+        plan</a><a href="#vulnerabilities"><span>03</span>Vulnerabilities</a><a
+        href="#compatibility"><span>04</span>Compatibility &amp; ecosystem</a><a
+        href="#limitations"><span>05</span>Analysis limitations</a></nav>
+    <div class="sidebar-footer"><strong>Evidence before action</strong>Review compatibility and analysis limitations
+      before applying updates.</div>
+  </aside>
+  <main>
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">Dependency security report</p>
+        <h1 id="project-name">Project analysis</h1>
+        <div class="page-meta" id="project-meta"></div>
+      </div><span class="header-tag">CRBF / Risk analysis</span>
+    </header>
+    <noscript>
+      <div class="notice warning">JavaScript is required to display the report. The complete data is also available in
+        risk-report.json.</div>
+    </noscript>
+    <section class="section" id="overview">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">01 / Security posture</p>
+          <h2>Overview</h2>
+          <p>What is affected, what is reachable, and what the selected updates address.</p>
+        </div><a class="back-link" href="#limitations">Review limitations</a>
+      </div>
+      <div class="cards" id="summary-cards"></div>
+      <div class="overview-bottom" id="overview-detail"></div>
+    </section>
+    <div class="controls" aria-label="Filter findings">
+      <div class="control"><label for="finding-search">Search dependencies or vulnerabilities</label><input
+          id="finding-search" type="search" placeholder="Dependency, CVE, GHSA or summary…"></div>
+      <div class="control"><label for="finding-filter">Show findings</label><select id="finding-filter">
+          <option value="all">All findings</option>
+          <option value="selected">Selected updates</option>
+          <option value="pending">Mandatory pending</option>
+          <option value="reachable">Reachable dependencies</option>
+          <option value="unknown">Unknown reachability</option>
+          <option value="unselected">Not selected</option>
+        </select></div>
+      <div class="control"><label for="finding-sort">Sort within priority</label><select id="finding-sort">
+          <option value="risk">Contextual risk · highest first</option>
+          <option value="effort">Selected effort · lowest first</option>
+          <option value="name">Dependency · A–Z</option>
+        </select></div><button id="reset-filters" type="button">Reset</button>
+      <div id="filter-result" class="filter-result" role="status" aria-live="polite"></div>
     </div>
-    <div class="sec-body" id="plan-body">
-      <p style="color:#64748b;font-size:13px">No findings.</p>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="sec-hdr">
-      <h2>Dependency Graph Validation</h2>
-    </div>
-    <div class="sec-body" id="gv-body"><span class="gv-status NOT_RUN">Not run</span></div>
-  </div>
-
-  <div class="section">
-    <div class="sec-hdr">
-      <h2>Scanned Dependencies</h2><span class="cnt" id="deps-cnt">0 deps</span>
-    </div>
-    <div class="sec-body">
-      <div class="deps-grid" id="deps-grid"></div>
-    </div>
-  </div>
-
+    <section class="section" id="remediation">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">02 / Decide what to update</p>
+          <h2>Remediation plan</h2>
+          <p>Selected actions and pending requirements are shown separately.</p>
+        </div><span id="plan-count" class="count"></span>
+      </div>
+      <div id="optimisation-outcome"></div>
+      <div id="plan-content"></div>
+    </section>
+    <section class="section" id="vulnerabilities">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">03 / Inspect the evidence</p>
+          <h2>Vulnerability analysis</h2>
+          <p>Expand a dependency for advisories, risk factors and reachability evidence.</p>
+        </div><span id="vulnerability-count" class="count"></span>
+      </div>
+      <div id="vulnerability-content"></div>
+    </section>
+    <section class="section" id="compatibility">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">04 / Understand the update cost</p>
+          <h2>Compatibility &amp; ecosystem</h2>
+          <p>Review API changes, upgrade-path quality and ecosystem indicators.</p>
+        </div>
+      </div>
+      <div id="graph-validation"></div>
+      <div id="compatibility-content"></div>
+    </section>
+    <section class="section" id="limitations">
+      <div class="section-head">
+        <div>
+          <p class="eyebrow">05 / Understand the confidence limits</p>
+          <h2>Analysis limitations</h2>
+          <p>Unavailable information is not evidence of a safe dependency or a clean update.</p>
+        </div>
+      </div>
+      <div id="limitations-content"></div>
+    </section>
+    <details class="block" id="inventory">
+      <summary><span class="summary-main"><span class="dependency">Dependency inventory</span><span class="summary-meta"
+            id="inventory-count"></span></span></summary>
+      <div class="detail-body"><label for="inventory-search">Find a scanned dependency</label><input
+          id="inventory-search" class="local-search" type="search" placeholder="Filter Maven coordinates…">
+        <div class="inventory" id="inventory-content"></div>
+      </div>
+    </details>
+    <footer class="footer"><span>CRBF · Contextualised Risk-Based Framework</span><span>Contextual risk is a
+        prioritisation score, not an exploitation probability.</span></footer>
+  </main>
   <script id="report-data" type="application/json">REPORT_DATA_PLACEHOLDER</script>
   <script>
-    const data = JSON.parse(document.getElementById('report-data').textContent);
+    'use strict';
+    function safeUrl(value) { try { const u = new URL(String(value)); return ['https:', 'http:'].includes(u.protocol) ? u.href : ''; } catch { return ''; } }
     const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    const num = v => isFinite(+v) ? +v : 0;
-    const fmt = (v, d = 2) => num(v).toFixed(d);
-    const fmtDate = iso => { try { return new Date(iso).toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' }) } catch { return iso || '' } };
-    const epssClr = v => v >= 0.1 ? '#ef4444' : v >= 0.01 ? '#f59e0b' : '#10b981';
+    const num = v => v != null && v !== '' && Number.isFinite(+v) ? +v : null;
+    const fmt = (v, d = 2) => num(v) == null ? 'Unavailable' : num(v).toFixed(d);
+    const fmtDate = iso => { if (!iso) return ''; const d = new Date(iso); return Number.isNaN(d.getTime()) ? esc(iso) : d.toLocaleDateString('en-GB', { year: 'numeric', month: 'short', day: 'numeric' }); };
+    const epssClr = () => '#176d68';
 
     // ─── Reachability ──────────────────────────────────────────────────────────
     const REACH_DOT = {
@@ -939,26 +1391,27 @@
       REACHABLE_CONFIRMED: 'Reachable — confirmed by call graph',
       REACHABLE_PROBABLE: 'Reachable — probable (library classes are in use)',
       UNKNOWN: 'Reachability unknown',
+      REACHABLE: 'Reachable (legacy classification)',
       UNREACHABLE: 'Not reachable from application code',
     };
     function reachDot(s) { return `<span class="rdot ${REACH_DOT[s] || 'unknown'}"></span>`; }
-    function reachLabel(s) { return REACH_LABEL[s] || s.replace(/_/g, ' '); }
+    function reachLabel(s) { return REACH_LABEL[s] || 'Reachability unknown'; }
 
     // ─── CVE card ──────────────────────────────────────────────────────────────
     function buildCveCard(cve) {
-      const id = esc(cve.id || 'N/A');
+      const id = esc(cve.id || 'Unavailable');
       const sev = esc(cve.severity || 'UNKNOWN');
-      const score = cve.cvss?.score > 0 ? fmt(cve.cvss.score, 1) : null;
+      const score = cve.severity !== 'UNKNOWN' && num(cve.cvss?.score) != null ? fmt(cve.cvss.score, 1) : null;
       const ev = cve.epss?.score;
       const ep = cve.epss?.percentile;
       const cwes = (cve.cwes || []).map(c => `<code>${esc(c)}</code>`).join(', ') || '—';
       const als = (cve.aliases || []).map(a => `<span class="alias">${esc(a)}</span>`).join(' ');
-      const url = esc(`https://osv.dev/vulnerability/${id}`);
+      const url = 'https://osv.dev/vulnerability/' + esc(encodeURIComponent(cve.id || ''));
       const epssHtml = ev != null
         ? `<span>EPSS <b style="color:${epssClr(ev)}">${(ev * 100).toFixed(3)}%</b>
        ${ep != null ? `<span style="color:#94a3b8">(P${Math.round(ep * 100)})</span>` : ''}
        <span class="epss-bar"><span style="width:${Math.min(ev * 100, 100)}%;background:${epssClr(ev)};height:100%;display:block;border-radius:3px"></span></span></span>`
-        : '<span style="color:#94a3b8">EPSS: N/A</span>';
+        : '<span style="color:#94a3b8">EPSS: Unavailable</span>';
       return `<div class="cve-card">
     <div class="cve-hdr">
       <div>
@@ -969,16 +1422,17 @@
     </div>
     ${cve.summary ? `<p class="cve-sum">${esc(cve.summary)}</p>` : ''}
     <div class="cve-meta">
-      ${score ? `<span>CVSS <b>${score}</b></span>` : '<span style="color:#94a3b8">CVSS: N/A</span>'}
+      ${score ? `<span>CVSS <b>${score}</b></span>` : '<span style="color:#94a3b8">CVSS: Unavailable</span>'}
       ${epssHtml}
       <span>CWEs: ${cwes}</span>
       ${fmtDate(cve.published) ? `<span>Published: ${fmtDate(cve.published)}</span>` : ''}
       ${fmtDate(cve.modified) ? `<span>Updated: ${fmtDate(cve.modified)}</span>` : ''}
     </div>
-    ${cve.advisoryUrl ? `<div style="margin-top:6px;font-size:11px">
-      <a style="color:#2563eb" href="${esc(cve.advisoryUrl)}" target="_blank" rel="noopener">Advisory &#8599;</a>
-      ${cve.fixCommitUrl ? `&nbsp;&nbsp;<a style="color:#2563eb" href="${esc(cve.fixCommitUrl)}" target="_blank" rel="noopener">Fix commit &#8599;</a>` : ''}
+    ${safeUrl(cve.advisoryUrl) || safeUrl(cve.fixCommitUrl) ? `<div class="inline-links">
+      ${safeUrl(cve.advisoryUrl) ? `<a href="${esc(safeUrl(cve.advisoryUrl))}" target="_blank" rel="noopener noreferrer">Advisory &#8599;</a>` : ''}
+      ${safeUrl(cve.fixCommitUrl) ? `<a href="${esc(safeUrl(cve.fixCommitUrl))}" target="_blank" rel="noopener noreferrer">Fix commit &#8599;</a>` : ''}
     </div>`: ''}
+    <details><summary>CVSS vector</summary><p class="mono">${esc(cve.cvss?.vector || 'Unavailable')}</p></details>
     ${renderRiskCalculation(cve.contextualRisk)}
   </div>`;
     }
@@ -1001,7 +1455,7 @@
       // remaining signals, so the weights shown here are the ones applied.
       const renormalisedNote = epssAvailable
         ? ''
-        : `<p class="rc-note">No EPSS score is published for this vulnerability.
+        : `<p class="rc-note">No EPSS score is available in this report for this vulnerability.
          Its weight was redistributed over CVSS and staleness, so the effective
          weights below differ from the configured ones.</p>`;
 
@@ -1029,10 +1483,10 @@
     }
 
     // ─── Maven snippet ─────────────────────────────────────────────────────────
-    function mavenSnippet(artifact, fixVer) {
+    function mavenSnippet(artifact, fixVer, index) {
       const pts = artifact.split(':');
       const g = esc(pts[0] || ''), a = esc(pts[1] || ''), v = esc(fixVer || '');
-      const sid = 'snip-' + artifact.replace(/[^a-z0-9]/gi, '-');
+      const sid = 'snip-' + index;
       return `<div style="margin-top:12px">
     <strong style="font-size:12px;color:#475569">pom.xml update:</strong>
     <div class="snippet">
@@ -1048,10 +1502,11 @@
     function copySnip(id) {
       const el = document.getElementById(id);
       if (!el) return;
+      if (!navigator.clipboard?.writeText) { el.parentElement.querySelector('.copy-btn').textContent = 'Select text to copy'; return; }
       navigator.clipboard.writeText(el.innerText).then(() => {
         const btn = el.parentElement.querySelector('.copy-btn');
         if (btn) { btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 2000); }
-      });
+      }).catch(() => { const btn = el.parentElement.querySelector('.copy-btn'); if (btn) btn.textContent = 'Select text to copy'; });
     }
 
     // ─── Stability ─────────────────────────────────────────────────────────────
@@ -1064,13 +1519,13 @@
       return {
         tood: get(/TOOD=(\d+)/),
         versionLag: get(/VersionLag=(\d+)/),
-        latestVersion: get(/LatestVersion=([\w.\-]+)/),
+        latestVersion: get(/LatestVersion=([^\s|,]+)/),
         stabilityScore: get(/StabilityScore=([\d.,]+)/),
         adoptionRate: get(/AdoptionRate=([\d.,]+%)/),
         lifespan: get(/Lifespan=(\d+)/),
         maintenanceRate: get(/MaintenanceRate=([\d.,]+)/),
         upgradePath: get(/Upgrade path:\s*([A-Z_]+)/),
-        upgradePathSecuritySignal: get(/upgradePathSecuritySignal:\s*([\d.,]+)/),
+        upgradePathSecuritySignal: get(/upgradePathSecuritySignal:\s*(-?[\d.,]+)/),
       };
     }
     function renderStability(summary, fixVersion, currentVersion) {
@@ -1084,12 +1539,12 @@
       const scoreAvailable = s.stabilityScore != null;
       const scorePct = scoreAvailable ? Math.round(parseFloat(s.stabilityScore) * 100) : 0;
       const scoreCls = scorePct < 20 ? 'low' : scorePct < 60 ? 'mid' : 'high';
-      // A measured zero is a real signal; only an absent measurement is "No data".
+      // A measured zero is a real signal; only an absent measurement is "Unavailable".
       const maintYr = s.maintenanceRate != null
         ? (parseFloat(s.maintenanceRate) * 365).toFixed(1) + ' releases/year'
-        : 'No data';
-      const adoption = s.adoptionRate != null ? s.adoptionRate : 'No data';
-      const lifespan = s.lifespan != null ? `${s.lifespan} days` : 'No data';
+        : 'Unavailable';
+      const adoption = s.adoptionRate != null ? s.adoptionRate : 'Unavailable';
+      const lifespan = s.lifespan != null ? `${s.lifespan} days` : 'Unavailable';
       // An unvalidated path is a third state, not a risky one.
       const upgPath = s.upgradePath === 'CLEAN'
         ? { colour: '#166534', label: 'None' }
@@ -1104,16 +1559,16 @@
         <div class="stability-card-title">Current version${currentVersion ? ' (' + esc(currentVersion) + ')' : ''}</div>
         <div class="stability-row">
           <span class="stability-label">Time out of date</span>
-          <span class="stability-value">${toodDays.toLocaleString()} days${toodExtra}</span>
+          <span class="stability-value">${s.tood == null ? 'Unavailable' : toodDays.toLocaleString() + ' days' + toodExtra}</span>
           <span class="stability-desc">Days since a newer version was published</span>
         </div>
         <div class="stability-row">
           <span class="stability-label">Versions behind</span>
-          <span class="stability-value">${lag} release${lag !== 1 ? 's' : ''}</span>
+          <span class="stability-value">${s.versionLag == null ? 'Unavailable' : lag + ' releases'}</span>
           <span class="stability-desc">Number of releases skipped since this version</span>
         </div>
         <div class="stability-row">
-          <span class="stability-label">Latest available</span>
+          <span class="stability-label">Latest known to graph</span>
           <span class="stability-value mono">${esc(s.latestVersion || 'unknown')}</span>
           <span class="stability-desc">Most recent version published in the ecosystem</span>
         </div>
@@ -1122,7 +1577,7 @@
         <div class="stability-card-title">Fix version${fixVersion ? ' (' + esc(fixVersion) + ')' : ''} - Ecosystem Health</div>
         <div class="stability-row">
           <span class="stability-label">Stability score</span>
-          <span class="stability-value">${scoreAvailable ? scorePct + '/100' : 'No data'}</span>
+          <span class="stability-value">${scoreAvailable ? scorePct + '/100' : 'Unavailable'}</span>
           ${scoreAvailable
           ? `<div class="score-bar"><div class="score-fill ${scoreCls}" style="width:${scorePct}%"></div></div>`
           : ''}
@@ -1151,12 +1606,12 @@
         <div class="stability-row">
           <span class="stability-label">New vulnerabilities introduced</span>
           <span class="stability-value" style="color:${upgPath.colour}">${upgPath.label}</span>
-          <span class="stability-desc">Whether the fix version itself carries known CVEs</span>
+          <span class="stability-desc">Whether new vulnerabilities were reported along the proposed upgrade path</span>
         </div>
         <div class="stability-row">
           <span class="stability-label">Upgrade path security signal</span>
-          <span class="stability-value">${s.upgradePathSecuritySignal != null ? s.upgradePathSecuritySignal : 'N/A'}</span>
-          <span class="stability-desc">Change in aggregate vulnerability risk score after upgrade</span>
+          <span class="stability-value">${s.upgradePathSecuritySignal != null ? s.upgradePathSecuritySignal : 'Unavailable'}</span>
+          <span class="stability-desc">Reported upgrade-path security signal; negative values indicate a less favourable path</span>
         </div>
       </div>
     </div>
@@ -1168,7 +1623,7 @@
       const groups = {};
       for (const c of changes) {
         const tm = c.match(/^\[(BINARY|SOURCE)\]/);
-        if (!tm) continue;
+        if (!tm) { if (!groups.OTHER) groups.OTHER = { Other: [] }; groups.OTHER.Other.push(c); continue; }
         const type = tm[1];
         let sub = 'Classes';
         if (c.match(/\]\s+Method\s+/)) sub = 'Methods';
@@ -1242,200 +1697,83 @@
       if (emptyEl) emptyEl.classList.toggle('visible', !anyVisible && !!q);
     }
 
-    // ─── Main setup ────────────────────────────────────────────────────────────
-    const findings = Array.isArray(data.findings) ? data.findings : [];
-    const gv = data.globalGraphValidation;
 
-    document.getElementById('hdr-project').textContent = 'Project: ' + (data.projectName || 'N/A');
-    document.getElementById('hdr-meta').innerHTML = [
-      (data.totalDependenciesScanned ?? 0) + ' dependencies scanned',
-      findings.length + ' finding' + (findings.length !== 1 ? 's' : ''),
-      'Generated ' + new Date().toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' }),
-    ].map(s => `<span>${esc(s)}</span>`).join('');
-
-    let mandatory = 0, recommended = 0, totalCves = 0, reachable = 0;
-    findings.forEach(f => {
-      const d = f.remediation?.decision || 'DEFER';
-      if (d === 'MANDATORY') mandatory++;
-      else if (d === 'RECOMMENDED') recommended++;
-      totalCves += (f.vulnerabilities || []).length;
-      if ((f.reachability?.status || '').startsWith('REACHABLE')) reachable++;
-    });
-
-    if (mandatory > 0) {
-      document.getElementById('mandatory-alert').style.display = 'block';
-      document.getElementById('alert-text').textContent =
-        mandatory + ' artifact' + (mandatory > 1 ? 's' : '') +
-        ' require immediate upgrade — reachable vulnerabilities with an available fix.';
+    const list = value => Array.isArray(value) ? value : [];
+    const $ = id => document.getElementById(id);
+    const empty = text => `<div class="empty">${esc(text)}</div>`;
+    const human = text => String(text || 'Unknown').replace(/_/g, ' ').toLowerCase().replace(/^./, c => c.toUpperCase());
+    const badge = (text, tone = '') => `<span class="status ${tone}">${esc(text)}</span>`;
+    const artifact = name => { const p = String(name || 'Unknown dependency').split(':'); return `<div class="dependency">${esc(p[1] || p[0])}</div><div class="group">${esc(p[0])}</div>`; };
+    const version = f => String(f.artifact || '').split(':').slice(2).join(':') || 'Unavailable';
+    const data = JSON.parse($('report-data').textContent);
+    const findings = list(data.findings), status = data.optimisationStatus || 'UNREPORTED', infeasible = status === 'INFEASIBLE';
+    const details = data.infeasibility, pending = list(details?.mandatoryUpgrades), pendingMap = new Map(pending.map(p => [p.artifact, p]));
+    const selected = f => !infeasible && ['MANDATORY', 'RECOMMENDED'].includes(f.remediation?.decision);
+    const isPending = f => infeasible && (pendingMap.has(f.artifact) || ['MANDATORY', 'MANDATORY_PENDING'].includes(f.remediation?.decision));
+    const pendingCount = new Set([...pending.map(p => p.artifact), ...findings.filter(isPending).map(f => f.artifact)]).size;
+    const reachable = f => ['REACHABLE_CONFIRMED', 'REACHABLE_PROBABLE', 'REACHABLE'].includes(f.reachability?.status);
+    const chosen = findings.filter(selected), vulns = findings.flatMap(f => list(f.vulnerabilities));
+    const sum = key => chosen.some(f => num(f.remediation?.[key]) == null) ? null : chosen.reduce((total, f) => total + num(f.remediation[key]), 0);
+    const confirmed = findings.filter(f => f.reachability?.status === 'REACHABLE_CONFIRMED').length;
+    const probable = findings.filter(f => ['REACHABLE_PROBABLE', 'REACHABLE'].includes(f.reachability?.status)).length;
+    const unknownReach = findings.filter(f => !f.reachability?.status || f.reachability.status === 'UNKNOWN');
+    const unknownCompat = findings.filter(f => !f.compatibility?.status || f.compatibility.status === 'UNKNOWN');
+    const unknownPath = findings.filter(f => parseStability(f.stabilitySummary)?.upgradePath === 'UNKNOWN');
+    const missingEpss = vulns.filter(v => num(v.epss?.score) == null).length;
+    const missingStability = findings.filter(f => parseStability(f.stabilitySummary)?.stabilityScore == null).length;
+    const lookupFailures = list(data.vulnerabilityLookupFailures), gv = data.globalGraphValidation;
+    $('project-name').textContent = data.projectName || 'Unnamed project'; document.title = (data.projectName || 'Project') + ' · CRBF security report';
+    $('project-meta').textContent = `${num(data.totalDependenciesScanned) ?? 'Unknown'} dependencies scanned · ${num(data.totalDependencyPaths) ?? 'Unknown'} dependency paths`;
+    $('summary-cards').innerHTML = [['Affected dependencies', findings.length, `of ${num(data.totalDependenciesScanned) ?? 'unknown'} scanned dependencies`], ['Vulnerability findings', vulns.length, `${new Set(vulns.map(v => v.id).filter(Boolean)).size} distinct reported advisory IDs`], ['Reachable dependencies', confirmed + probable, `${confirmed} confirmed · ${probable} probable`], ['Selected updates', chosen.length, `${chosen.filter(f => f.remediation.decision === 'MANDATORY').length} mandatory selections${infeasible ? ' · ' + pendingCount + ' mandatory pending' : ''}`]].map(([label, value, note]) => `<div class="card"><div class="card-label">${esc(label)}</div><div class="card-value">${value}</div><div class="card-note">${esc(note)}</div></div>`).join('');
+    const metric = (value, label) => `<div class="metric"><span class="metric-value ${value === 'Unavailable' || value === 'Not established' ? 'unavailable' : ''}">${value}</span><span class="metric-label">${esc(label)}</span></div>`;
+    const total = findings.length || 1;
+    $('overview-detail').innerHTML = `<div class="panel"><div class="panel-heading"><h3>Selected impact &amp; remaining risk</h3><a class="help" href="#remediation">Review plan</a></div><div class="metrics">${metric(fmt(sum('riskReduction')), 'Selected risk reduction')}${metric(fmt(data.residualRisk?.actionable), 'Actionable residual risk')}${metric(fmt(data.residualRisk?.blocked), 'Blocked residual risk')}</div><p class="help" style="margin:14px 0 0">Residual risk is unmitigated. Actionable risk has a known fix or migration; blocked risk has no known remediation path.</p></div><div class="panel"><div class="panel-heading"><h3>Reachability evidence</h3><a class="help" href="#vulnerabilities">Inspect findings</a></div><div class="meter" aria-hidden="true"><span style="width:${confirmed / total * 100}%"></span><span class="probable" style="width:${probable / total * 100}%"></span><span class="unknown" style="width:${unknownReach.length / total * 100}%"></span></div><div class="legend"><span><i></i>${confirmed} confirmed</span><span class="probable"><i></i>${probable} probable</span><span class="unknown"><i></i>${unknownReach.length} unknown</span><span>${findings.filter(f => f.reachability?.status === 'UNREACHABLE').length} unreachable</span></div><p class="help" style="margin:12px 0 0">Probable reachability means library classes are used; the vulnerable class has not been confirmed. Static reachability does not prove exploitability.</p></div>`;
+    const outcomes = { OPTIMAL: ['Optimal selection', 'Maximum contextual risk reduction within the configured constraints.', ''], FEASIBLE: ['Feasible selection', 'The selection is reported as feasible; optimality is not established.', ''], GREEDY_FALLBACK: ['Feasible · greedy fallback', 'The solver did not produce an optimum. The fallback respects effort and mandatory constraints; optimality is not guaranteed.', 'warning'], INFEASIBLE: ['No feasible remediation plan', 'No updates are selected. Mandatory pending upgrades are requirements to address, not an executable plan. All current risk remains unmitigated.', 'danger'], NOT_RUN: ['Optimisation not run', 'No optimisation result was produced. Check the findings and lookup limitations before interpreting this as an absence of risk.', 'neutral'], UNREPORTED: ['Optimisation outcome not reported', 'This report does not supply an optimisation status. Listed recommendations are preserved; feasibility and optimality cannot be confirmed from this file.', 'neutral'] };
+    const outcome = outcomes[status] || ['Unrecognised optimisation outcome', 'The source reports ' + status + '. Review the original result.', 'warning'];
+    const diagnostic = infeasible && details ? `<div class="metrics">${metric(fmt(details.availableEffortBudget, 1), 'Available effort budget')}${metric(fmt(details.requiredMandatoryEffort, 1), 'Required mandatory effort')}${metric(details.reason === 'MANDATORY_EFFORT_EXCEEDS_BUDGET' && num(details.budgetShortfall) > 0 ? fmt(details.budgetShortfall, 1) : 'Not established', 'Confirmed budget shortfall')}</div><p style="margin-top:12px">Cause: ${esc(human(details.reason))}. Pending effort is separate from selected effort.</p>` : '';
+    $('optimisation-outcome').innerHTML = `<div class="notice ${outcome[2]}"><h3>${esc(outcome[0])}</h3><p>${esc(outcome[1])}</p>${diagnostic}</div><div class="panel" style="margin-bottom:18px"><div class="metrics plan-metrics">${metric(chosen.length, 'Selected updates')}${metric(fmt(sum('effortCost'), 1), 'Selected effort units')}${metric(fmt(data.availableEffortBudget ?? details?.availableEffortBudget, 1), 'Available effort budget')}${metric(fmt(sum('riskReduction')), 'Selected risk reduction')}</div></div>`;
+    function searchable(items, label) { return `<div><label>${esc(label)}<input class="local-search" type="search" data-list-search placeholder="Filter this list…"></label><ul class="code-list">${items.map(item => `<li>${esc(item)}</li>`).join('')}</ul><p class="help local-count">${items.length} entries</p></div>`; }
+    const rank = f => selected(f) ? (f.remediation.decision === 'MANDATORY' ? 0 : 1) : isPending(f) ? 2 : 3;
+    const decision = f => isPending(f) ? 'Mandatory pending' : infeasible && ['MANDATORY', 'RECOMMENDED'].includes(f.remediation?.decision) ? 'Reported recommendation · not selected' : human(f.remediation?.decision || 'No decision reported');
+    function planTable(rows) { if (!rows.length) return empty('No findings in this group match the current filters.'); return `<div class="table-wrap"><table><thead><tr><th>Dependency / versions</th><th>Decision</th><th>Contextual risk</th><th>Selected reduction</th><th>Selected effort</th></tr></thead><tbody>${rows.map(f => { const i = findings.indexOf(f), r = f.remediation || {}, isSelected = selected(f), alt = r.alternativeFix; return `<tr><td>${artifact(f.artifact)}<div class="version">${esc(version(f))}${r.recommendedVersion ? ' → <strong>' + esc(r.recommendedVersion) + '</strong>' : ' · No direct fix reported'}</div></td><td>${badge(decision(f), isSelected && r.decision === 'MANDATORY' ? 'attention' : isSelected ? 'good' : '')}</td><td class="number risk-number">${fmt(f.contextualRisk, 3)}</td><td class="number">${fmt(isSelected ? r.riskReduction : 0)}</td><td class="number">${fmt(isSelected ? r.effortCost : 0, 1)}</td></tr><tr class="row-details"><td colspan="5"><details><summary>Rationale &amp; supporting evidence</summary><p>${esc(r.rationale || 'No optimisation rationale was supplied.')}</p>${alt ? `<p><strong>Manual migration available:</strong> <code>${esc(alt.groupId)}:${esc(alt.artifactId)}:${esc(alt.version)}</code>. Requires dependency and code changes; not an automatic version update.</p>` : ''}<div class="inline-links"><a href="#vulnerability-${i}" data-open="vulnerability-${i}">Vulnerability evidence</a><a href="#compatibility-${i}" data-open="compatibility-${i}">Compatibility &amp; ecosystem</a></div>${isSelected && r.recommendedVersion ? mavenSnippet(f.artifact, r.recommendedVersion, i) : ''}</details></td></tr>`; }).join('')}</tbody></table></div>`; }
+    function pendingTable(rows) {
+      const query = $('finding-search').value.toLowerCase();
+      const filter = $('finding-filter').value;
+      const all = pending.filter(p => {
+        const finding = findings.find(f => f.artifact === p.artifact);
+        return finding ? rows.includes(finding) : (!query || String(p.artifact).toLowerCase().includes(query)) && ['all', 'pending', 'unselected'].includes(filter);
+      });
+      all.push(...rows.filter(f => isPending(f) && !pendingMap.has(f.artifact)).map(f => ({ artifact: f.artifact, targetVersion: f.remediation?.recommendedVersion, effortCost: null })));
+      if (!all.length) return empty('No pending mandatory upgrades match the current filters.');
+      return `<div class="table-wrap"><table><thead><tr><th>Mandatory dependency</th><th>Required version</th><th>Required pending effort</th><th>State</th></tr></thead><tbody>${all.map(p => {
+        const finding = findings.find(f => f.artifact === p.artifact);
+        const index = findings.indexOf(finding);
+        return `<tr><td>${artifact(p.artifact)}<div class="mono">Current: ${esc(String(p.artifact).split(':').slice(2).join(':'))}</div></td><td class="mono">${esc(p.targetVersion || 'Unavailable')}</td><td class="number">${fmt(p.effortCost, 1)}</td><td>${badge('Pending · not selected', 'attention')}</td></tr>
+          <tr class="row-details"><td colspan="4"><details><summary>Pending requirement &amp; supporting evidence</summary><p>${esc(finding?.remediation?.rationale || 'Mandatory upgrade pending. No feasible plan exists under the reported constraints.')}</p>${finding ? `<div class="inline-links"><a href="#vulnerability-${index}" data-open="vulnerability-${index}">Vulnerability evidence</a><a href="#compatibility-${index}" data-open="compatibility-${index}">Compatibility &amp; ecosystem</a></div>` : ''}</details></td></tr>`;
+      }).join('')}</tbody></table></div>`;
     }
-
-    const gvSt = gv?.status || 'NOT_RUN';
-    const gvCard = gvSt === 'CLEAN' ? { c: 'green', v: '&#10003;', l: 'Graph Clean' }
-      : gvSt === 'HAS_RISKS' ? { c: 'amber', v: '!', l: 'Graph Risks' }
-        : { c: 'grey', v: '&mdash;', l: 'Graph N/A' };
-    document.getElementById('cards').innerHTML = [
-      { c: 'blue', v: data.totalDependenciesScanned ?? 0, l: 'Dependencies' },
-      { c: 'red', v: totalCves, l: 'Total CVEs' },
-      { c: 'amber', v: reachable, l: 'Reachable' },
-      { c: 'red', v: mandatory, l: 'Mandatory' },
-      { c: 'amber', v: recommended, l: 'Recommended' },
-      { c: gvCard.c, v: gvCard.v, l: gvCard.l },
-    ].map(c => `<div class="card ${c.c}"><div class="val">${c.v}</div><div class="lbl">${c.l}</div></div>`).join('');
-
-    // ─── Action plan ──────────────────────────────────────────────────────────
-    const ORDER = { MANDATORY: 0, RECOMMENDED: 1, MIGRATION_AVAILABLE: 2, DEFER: 3 };
-    // Within a decision group, order by the risk of leaving the artifact as it is.
-    // remediation.riskReduction is what the plan removes, and is zero whenever no
-    // automatic upgrade exists — sorting on it would bury confirmed-reachable
-    // vulnerabilities that simply have no one-line fix.
-    const sorted = [...findings].sort((a, b) => {
-      const da = a.remediation?.decision || 'DEFER', db = b.remediation?.decision || 'DEFER';
-      return (ORDER[da] ?? 3) - (ORDER[db] ?? 3)
-        || num(b.contextualRisk) - num(a.contextualRisk);
-    });
-
-    document.getElementById('plan-cnt').textContent = sorted.length + ' action' + (sorted.length !== 1 ? 's' : '');
-
-    if (sorted.length === 0) {
-      document.getElementById('plan-body').innerHTML =
-        '<p style="color:#64748b;font-size:13px;text-align:center;padding:20px 0">&#10003; No upgrade actions needed.</p>';
-    } else {
-      document.getElementById('plan-body').innerHTML = sorted.map((f, i) => {
-        const d = f.remediation?.decision || 'DEFER';
-        const fv = f.remediation?.recommendedVersion || '';
-        const rs = f.reachability?.status || 'UNKNOWN';
-        const cs = f.compatibility?.status || 'UNKNOWN';
-        const bc = f.compatibility?.breakingChangeCount || 0;
-        const adj = f.compatibility?.contextuallyAdjusted || false;
-        const vl = f.vulnerabilities || [];
-        const rm = f.reachability?.reachableMethods || [];
-        const sid = 'ab-' + i, cid = 'ch-' + i;
-        const stepCls = d === 'MANDATORY' ? 'r'
-          : (d === 'RECOMMENDED' || d === 'MIGRATION_AVAILABLE') ? 'a'
-            : 'g';
-        const sevs = [...new Set(vl.map(v => v.severity).filter(Boolean))]
-          .map(s => `<span class="sev ${s}">${s}</span>`).join(' ');
-
-        // Current version from artifact string (groupId:artifactId:version)
-        const artParts = (f.artifact || '').split(':');
-        const currentVersion = artParts[2] || '';
-
-        // Compatibility note
-        let compatNote = '';
-        if (cs === 'BINARY_INCOMPATIBLE') {
-          compatNote = `<div class="note warn"><strong>&#9888; Binary incompatible &mdash; ${bc} breaking change${bc !== 1 ? 's' : ''}</strong>Verify your code does not call any removed or changed APIs before upgrading.</div>`;
-        } else if (cs === 'SOURCE_INCOMPATIBLE') {
-          compatNote = `<div class="note warn"><strong>&#9888; Source incompatible &mdash; ${bc} breaking change${bc !== 1 ? 's' : ''}</strong>Some API signatures changed. Recompile and test thoroughly after upgrading.</div>`;
-        } else if (adj && bc > 0) {
-          compatNote = `<div class="note ok"><strong>&#10003; Upgrade is safe &mdash; breaking changes are not reachable</strong>Binary compatibility analysis found ${bc} breaking change${bc !== 1 ? 's' : ''}, but static call graph analysis confirmed that none of the affected methods are invoked from your application code. Upgrade risk is low.</div>`;
-        }
-
-        // Reachability note
-        // Reachability reports call-graph evidence only. Priority follows from the
-        // contextual risk and the optimiser's decision, which weigh severity,
-        // exploitability and whether a fix exists at all — none of which this
-        // panel can see. Telling the reader to "upgrade immediately" here
-        // contradicts the DEFER badge on an artifact that has no fix.
-        let reachNote = '';
-        if (rs === 'UNREACHABLE') {
-          reachNote = `<div class="note info"><strong>Vulnerable code is not reachable from your application</strong>Static call graph analysis found no execution path from your code to the vulnerable library classes.</div>`;
-        } else if (rs === 'REACHABLE_CONFIRMED') {
-          reachNote = `<div class="note warn"><strong>&#9888; Vulnerable class is directly invoked</strong>The call graph confirms your application reaches the specific vulnerable class, so the vulnerable code is exercised.</div>`;
-        } else if (rs === 'REACHABLE_PROBABLE') {
-          reachNote = `<div class="note warn"><strong>&#9888; Classes from the vulnerable library are in use</strong>Your application calls classes from this library. The CVE description does not identify the specific vulnerable class, so exploitability could neither be confirmed nor excluded.</div>`;
-        }
-
-        const cveHtml = vl.map(buildCveCard).join('');
-        const bcHtml = renderBreakingChanges(f.compatibility?.topBreakingChanges || [], bc, i);
-        const stabHtml = renderStability(f.stabilitySummary || '', fv, currentVersion);
-        const rmHtml = rm.length > 0
-          ? `<div style="margin-top:10px">
-           <div style="font-size:12px;font-weight:600;color:#334155;margin-bottom:4px">
-             Reachable methods from this library (${rm.length})
-           </div>
-           <ul class="methods-list">${rm.map(m => `<li>${esc(m)}</li>`).join('')}</ul>
-         </div>`
-          : '';
-        const rationaleHtml = f.remediation?.rationale
-          ? `<div class="note info" style="margin-top:10px"><strong>Prioritization rationale</strong>${esc(f.remediation.rationale)}</div>`
-          : '';
-
-        return `<div class="action">
-      <div class="action-hdr" onclick="toggle('${sid}','${cid}')">
-        <div class="step-num ${stepCls}">${i + 1}</div>
-        <div class="action-main">
-          <div class="action-title">
-            <span class="mono">${esc(f.artifact || '')}</span>
-            ${fv ? `<span style="color:#059669;font-weight:600">&#8594; ${esc(fv)}</span>` : ''}
-            <span class="badge ${d}">${d}</span>
-            ${cs !== 'UNKNOWN' ? `<span class="compat ${cs}">${cs.replace(/_/g, ' ')}${adj ? ' (contextual)' : ''}</span>` : ''}
-          </div>
-          <div class="action-sub">
-            ${reachDot(rs)}<span>${reachLabel(rs)}</span>
-            <span style="color:#cbd5e1">&bull;</span>
-            <span>${vl.length} CVE${vl.length !== 1 ? 's' : ''}</span>
-            <span style="color:#cbd5e1">&bull;</span>
-            ${sevs}
-          </div>
-          <div class="action-metrics">
-            <span class="metric">Contextual risk: <b>${fmt(f.contextualRisk)}</b></span>
-            <span class="metric">Risk reduction: <b>${fmt(f.remediation?.riskReduction)}</b></span>
-            <span class="metric">Effort: <b>${fmt(f.remediation?.effortCost, 1)} units</b></span>
-            ${bc > 0 ? `<span class="metric" style="color:${adj ? '#b45309' : '#b91c1c'}">${bc} breaking change${bc !== 1 ? 's' : ''}${adj ? ' &mdash; not reachable' : ''}</span>` : ''}
-          </div>
-        </div>
-        <div class="chev" id="${cid}">&#9660;</div>
-      </div>
-      <div class="action-body" id="${sid}">
-        ${compatNote}
-        ${reachNote}
-        ${fv ? mavenSnippet(f.artifact || '', fv) : ''}
-        ${cveHtml ? `<div style="margin-top:14px"><h4 class="sub">Vulnerability Details</h4>${cveHtml}</div>` : ''}
-        ${rmHtml}
-        ${bcHtml}
-        ${stabHtml}
-        ${rationaleHtml}
-      </div>
-    </div>`;
-      }).join('');
+    function renderFindings() {
+      const q = $('finding-search').value.trim().toLowerCase(), filter = $('finding-filter').value, sort = $('finding-sort').value;
+      const rows = findings.filter(f => { const text = [f.artifact, ...list(f.vulnerabilities).flatMap(v => [v.id, v.summary, ...list(v.aliases)])].join(' ').toLowerCase(); return (!q || text.includes(q)) && (filter === 'all' || filter === 'selected' && selected(f) || filter === 'pending' && isPending(f) || filter === 'reachable' && reachable(f) || filter === 'unknown' && unknownReach.includes(f) || filter === 'unselected' && !selected(f)); }).sort((a, b) => rank(a) - rank(b) || (sort === 'name' ? String(a.artifact).localeCompare(String(b.artifact)) : sort === 'effort' ? (num(a.remediation?.effortCost) ?? Infinity) - (num(b.remediation?.effortCost) ?? Infinity) : (num(b.contextualRisk) ?? -1) - (num(a.contextualRisk) ?? -1)) || String(a.artifact).localeCompare(String(b.artifact)));
+      $('filter-result').textContent = `Showing ${rows.length} of ${findings.length} affected dependencies. Filters apply to the plan, vulnerabilities and compatibility; overview totals remain project-wide.`;
+      $('plan-count').textContent = `${chosen.length} selected${infeasible ? ' · ' + pendingCount + ' mandatory pending' : ''}`;
+      $('plan-content').innerHTML = `<div class="subheading">Selected updates</div>${planTable(rows.filter(selected))}${infeasible ? `<div class="subheading">Mandatory pending · not part of a selected plan</div>${pendingTable(rows)}` : ''}<details style="margin-top:18px"><summary class="subheading">Other findings (${rows.filter(f => !selected(f) && !isPending(f)).length}) · deferred, migration or no available fix</summary>${planTable(rows.filter(f => !selected(f) && !isPending(f)))}</details>`;
+      $('vulnerability-count').textContent = rows.reduce((n, f) => n + list(f.vulnerabilities).length, 0) + ' vulnerability findings shown';
+      $('vulnerability-content').innerHTML = rows.map(f => { const i = findings.indexOf(f), r = f.reachability?.status; return `<details class="block" id="vulnerability-${i}"><summary><span class="summary-main">${artifact(f.artifact)}<span class="summary-meta"><span>Version ${esc(version(f))}</span><span>${list(f.vulnerabilities).length} advisory findings</span><span>${esc(reachLabel(r))}</span><span>Risk ${fmt(f.contextualRisk, 3)}</span></span></span></summary><div class="detail-body"><p class="help">Artifact: <span class="mono">${esc(f.artifact)}</span>. Dependency risk is the maximum contextual risk among its vulnerabilities, not a sum.</p>${list(f.vulnerabilities).map(buildCveCard).join('') || empty('No advisory details were supplied.')}<details><summary>Reachability evidence · ${list(f.reachability?.reachableMethods).length} reported methods</summary><p class="help">${r === 'UNREACHABLE' ? 'No static path was identified. Dynamic execution is not fully covered.' : r === 'UNKNOWN' || !r ? 'An empty method list is not proof of unreachability.' : 'Reported reachable methods belong to the dependency; they are not necessarily vulnerable methods.'}</p>${searchable(list(f.reachability?.reachableMethods), 'Search reachable methods')}</details></div></details>`; }).join('') || empty('No vulnerability findings match the current filters.');
+      $('compatibility-content').innerHTML = rows.map(f => { const i = findings.indexOf(f), c = f.compatibility || {}, s = parseStability(f.stabilitySummary); return `<details class="block" id="compatibility-${i}"><summary><span class="summary-main">${artifact(f.artifact)}<span class="summary-meta"><span>${esc(human(c.status || 'UNKNOWN'))}</span><span>${num(c.breakingChangeCount) ?? 'Unknown'} breaking changes</span><span>Upgrade path: ${esc(human(s?.upgradePath || 'Not reported'))}</span></span></span></summary><div class="detail-body"><div class="detail-grid"><div><h3>API compatibility</h3><p class="help">${c.status === 'BINARY_INCOMPATIBLE' ? 'Existing compiled code may fail at runtime. Review the affected APIs before updating.' : c.status === 'SOURCE_INCOMPATIBLE' ? 'Source code may need changes to compile against the new version.' : c.status === 'COMPATIBLE' ? 'No applicable API incompatibility was reported. Behavioural compatibility is not guaranteed.' : 'Compatibility was not established. This is not a compatible classification.'}</p>${c.contextuallyAdjusted ? '<p class="help">Contextually adjusted: breaking methods were not found in the available call graph. The original changes remain listed.</p>' : ''}<p class="help">Changes by type: ${Object.entries(c.breakingChangesByType || {}).map(([k, v]) => esc(k) + ': ' + esc(v)).join(' · ') || 'Not reported'}</p>${renderBreakingChanges(list(c.topBreakingChanges), num(c.breakingChangeCount) ?? 0, i)}${list(c.topBreakingChanges).length === 0 ? '<p class="help">No individual breaking-change descriptions were supplied.</p>' : ''}</div><div><h3>Version comparison</h3><p class="mono">${esc(f.artifact)}</p><p class="help">Proposed version: <strong>${esc(f.remediation?.recommendedVersion || 'No direct fix reported')}</strong></p><p class="help">Compatibility assesses the proposed update, including when it is not selected.</p></div></div>${renderStability(f.stabilitySummary, f.remediation?.recommendedVersion, version(f))}<details><summary>Complete ecosystem summary</summary><p class="raw-summary">${esc(f.stabilitySummary || 'Ecosystem information unavailable.')}</p></details></div></details>`; }).join('') || empty('No compatibility findings match the current filters.');
     }
-
-    function toggle(bodyId, chevId) {
-      const b = document.getElementById(bodyId), c = document.getElementById(chevId);
-      if (b) b.classList.toggle('open');
-      if (c) c.classList.toggle('open');
-    }
-
-    // ─── Graph validation ──────────────────────────────────────────────────────
-    if (gv) {
-      const labels = {
-        CLEAN: '&#10003; Clean &mdash; no new vulnerable transitive dependencies',
-        HAS_RISKS: '&#9888; Risks detected &mdash; new vulnerable dependencies found',
-        // Either the graph service could not be reached, or a fix version is
-        // absent from it. Both leave the combined upgrade unvalidated.
-        UNAVAILABLE: 'Not validated &mdash; fix versions absent from the ecosystem graph, or graph service unreachable',
-        NOT_RUN: 'Not run',
-      };
-      let html = `<div class="gv-status ${gvSt}">${labels[gvSt] ?? esc(gvSt)}</div>`;
-      if (gv.analyzedArtifacts?.length > 0)
-        html += `<p style="font-size:12px;font-weight:600;color:#475569;margin:8px 0 4px">Fix versions validated:</p>
-             <div class="deps-grid">${gv.analyzedArtifacts.map(a => `<div class="dep-item">${esc(a)}</div>`).join('')}</div>`;
-      if (gv.newVulnerableDeps?.length > 0)
-        html += `<p style="font-size:12px;font-weight:600;color:#991b1b;margin:12px 0 4px">New vulnerable transitive dependencies:</p>
-             <div class="deps-grid">${gv.newVulnerableDeps.map(a => `<div class="dep-item" style="border-color:#fca5a5;color:#991b1b">${esc(a)}</div>`).join('')}</div>`;
-      if (gvSt === 'CLEAN')
-        html += `<div class="note ok" style="margin-top:12px"><strong>&#10003; Safe to apply all upgrades simultaneously</strong>Applying all recommended fixes does not introduce new vulnerable transitive dependencies.</div>`;
-      document.getElementById('gv-body').innerHTML = html;
-    }
-
-    // ─── Scanned dependencies ──────────────────────────────────────────────────
-    document.getElementById('deps-cnt').textContent = (data.totalDependenciesScanned ?? 0) + ' deps';
-    const depArtifacts = Array.isArray(data.scannedArtifacts)
-      ? data.scannedArtifacts
-      : findings.map(f => f.artifact).filter(Boolean);
-    document.getElementById('deps-grid').innerHTML = depArtifacts.length > 0
-      ? depArtifacts.map(a => `<div class="dep-item">${esc(a)}</div>`).join('')
-      : '<p style="color:#94a3b8;font-size:12px">Not available.</p>';
+    const graphLabels = { CLEAN: 'Clean within the available graph', HAS_RISKS: 'New vulnerable transitive dependencies reported', UNAVAILABLE: 'Global graph validation unavailable', NOT_RUN: 'Global graph validation not run' };
+    $('graph-validation').innerHTML = `<details class="block"><summary><span class="summary-main"><span class="dependency">Combined upgrade validation</span><span class="summary-meta">${esc(graphLabels[gv?.status] || 'Global graph validation not reported')}</span></span></summary><div class="detail-body"><p class="help">${gv?.status === 'CLEAN' ? 'No new vulnerable transitive dependencies were reported for the analysed fix versions. This is not a guarantee of runtime safety.' : 'Review the validation status before applying updates together. Missing graph data must not be interpreted as a clean result.'}</p><div class="detail-grid"><div><h3>Analysed fix versions</h3>${searchable(list(gv?.analyzedArtifacts), 'Find an analysed artifact')}</div><div><h3>New vulnerable dependencies</h3>${searchable(list(gv?.newVulnerableDeps), 'Find a vulnerable dependency')}</div></div></div></details>`;
+    $('limitations-content').innerHTML = `<div class="limitations-grid">${[['Unknown reachability', unknownReach.length], ['Unknown compatibility', unknownCompat.length], ['Unknown upgrade paths', unknownPath.length], ['Missing EPSS scores', missingEpss], ['Unavailable fix stability', missingStability], ['Failed vulnerability lookups', lookupFailures.length]].map(([label, count]) => `<div class="limitation-card"><strong>${count}</strong><p>${esc(label)}${label === 'Missing EPSS scores' ? ' · advisory findings' : label === 'Failed vulnerability lookups' ? '' : ' · dependencies'}</p></div>`).join('')}</div><div class="panel" style="margin-top:14px"><h3>What to account for before acting</h3><ul class="limitation-list"><li><strong>Global graph:</strong> ${esc(graphLabels[gv?.status] || 'Not reported')}.${gv?.status === 'UNAVAILABLE' ? ' Required fix versions or the graph service were unavailable; combined update validation is incomplete.' : ''}</li>${lookupFailures.length ? `<li><strong>Failed lookups:</strong> these dependencies have unknown vulnerability status, not zero vulnerabilities.${searchable(lookupFailures, 'Find a failed lookup')}</li>` : `<li><strong>Vulnerability lookups:</strong> ${Array.isArray(data.vulnerabilityLookupFailures) ? 'no failures were reported.' : 'failure information was not supplied.'}</li>`}${unknownReach.length ? `<li><strong>Unknown reachability:</strong> ${unknownReach.map(f => esc(f.artifact)).join(', ')}.</li>` : ''}${unknownCompat.length ? `<li><strong>Unknown compatibility:</strong> ${unknownCompat.map(f => esc(f.artifact)).join(', ')}. Missing JARs, failed analysis or inapplicable comparisons do not establish compatibility.</li>` : ''}${unknownPath.length ? `<li><strong>Unknown upgrade paths:</strong> ${unknownPath.map(f => esc(f.artifact)).join(', ')}. These paths have not been validated as clean.</li>` : ''}<li><strong>Unavailable data:</strong> absent EPSS and ecosystem measurements remain unavailable; a measured zero is shown as zero. The report does not supply detailed stage timings or every missing-data cause.</li><li><strong>Static analysis:</strong> reachability and API compatibility do not prove exploitability or runtime correctness. Review dynamic loading, reflection and application tests.</li>${status === 'UNREPORTED' ? '<li><strong>Legacy report:</strong> optimisation outcome was not supplied. Feasibility and optimality are not inferred from recommendation wording.</li>' : ''}<li><strong>Inventory:</strong> dependency paths differ from unique scanned dependencies. Excluded or unresolved dependencies may be absent.</li></ul></div>`;
+    const inventory = Array.isArray(data.scannedArtifacts) ? data.scannedArtifacts : findings.map(f => f.artifact).filter(Boolean);
+    function renderInventory() { const q = $('inventory-search').value.toLowerCase(); const shown = inventory.filter(a => String(a).toLowerCase().includes(q)); $('inventory-count').textContent = `${inventory.length} listed · ${num(data.totalDependencyPaths) ?? 'unknown'} dependency paths${Array.isArray(data.scannedArtifacts) ? '' : ' · affected dependencies only'}`; $('inventory-content').innerHTML = shown.map(a => `<div class="mono">${esc(a)}</div>`).join('') || '<div>No listed dependencies match.</div>'; }
+    ['finding-search', 'finding-filter', 'finding-sort'].forEach(id => $(id).addEventListener(id === 'finding-search' ? 'input' : 'change', renderFindings));
+    $('reset-filters').addEventListener('click', () => { $('finding-search').value = ''; $('finding-filter').value = 'all'; $('finding-sort').value = 'risk'; renderFindings(); });
+    $('inventory-search').addEventListener('input', renderInventory);
+    document.addEventListener('input', event => { if (!event.target.matches('[data-list-search]')) return; const container = event.target.closest('div'); const q = event.target.value.toLowerCase(); let count = 0; container.querySelectorAll('li').forEach(li => { li.hidden = !li.textContent.toLowerCase().includes(q); if (!li.hidden) count++; }); const counter = container.querySelector('.local-count'); if (counter) counter.textContent = count + ' matching entries'; });
+    document.addEventListener('click', event => { const a = event.target.closest('[data-open]'); if (a) { const target = $(a.dataset.open); if (target) target.open = true; } });
+    renderFindings(); renderInventory();
+    if ('IntersectionObserver' in window) { const observer = new IntersectionObserver(entries => entries.forEach(entry => { if (entry.isIntersecting) document.querySelectorAll('nav a').forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + entry.target.id)); }), { rootMargin: '-10% 0px -65% 0px' }); document.querySelectorAll('main>section').forEach(s => observer.observe(s)); }
   </script>
 </body>
 

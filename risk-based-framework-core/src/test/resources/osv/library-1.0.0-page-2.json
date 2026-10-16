@@ -1,0 +1,9 @@
+{
+  "vulns": [{
+    "id": "CVE-2026-3001",
+    "aliases": ["GHSA-jjjj-kkkk-llll"],
+    "summary": "Synthetic advisory returned on a subsequent page",
+    "details": "This record belongs to the same package and version as page one.",
+    "affected": [{"package": {"ecosystem": "Maven", "name": "org.example:library"}, "versions": ["1.0.0"]}]
+  }]
+}

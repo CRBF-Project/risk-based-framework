@@ -1,6 +1,5 @@
 package org.crbf.adapter.out.japicmp;
 
-import japicmp.model.JApiChangeStatus;
 import japicmp.model.JApiClass;
 import japicmp.model.JApiCompatibilityChange;
 import japicmp.model.JApiConstructor;
@@ -28,9 +27,11 @@ class JapicmpCompatibilityMapper {
         boolean hasSourceBreak = false;
 
         for (JApiClass jApiClass : jApiClasses) {
-            if (jApiClass.getChangeStatus() == JApiChangeStatus.UNCHANGED) {
-                continue;
-            }
+            // Generic signatures can be source-incompatible even when japicmp
+            // labels the class UNCHANGED and supplies no explicit change entry.
+            hasBinaryBreak |= !jApiClass.isBinaryCompatible();
+            hasSourceBreak |= !jApiClass.isSourceCompatible();
+            int previousChangeCount = breakingChanges.size();
 
             for (JApiCompatibilityChange change : jApiClass.getCompatibilityChanges()) {
                 if (!change.isBinaryCompatible()) {
@@ -87,6 +88,13 @@ class JapicmpCompatibilityMapper {
                                 "field", field.getName(), change, "SOURCE"));
                     }
                 }
+            }
+
+            if (breakingChanges.size() == previousChangeCount
+                    && (!jApiClass.isBinaryCompatible() || !jApiClass.isSourceCompatible())) {
+                String level = jApiClass.isBinaryCompatible() ? "SOURCE" : "BINARY";
+                breakingChanges.add(String.format("[%s] Class %s — Incompatibility reported by japicmp",
+                        level, jApiClass.getFullyQualifiedName()));
             }
         }
 

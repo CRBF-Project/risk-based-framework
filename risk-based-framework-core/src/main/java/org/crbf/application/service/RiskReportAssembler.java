@@ -25,6 +25,7 @@ import org.crbf.domain.model.artifact.DependencyPath;
 import org.crbf.domain.model.compatibility.CompatibilityReport;
 import org.crbf.domain.model.compatibility.CompatibilityStatus;
 import org.crbf.domain.model.optimisation.GlobalGraphValidation;
+import org.crbf.domain.model.optimisation.OptimisationStatus;
 import org.crbf.domain.model.optimisation.RemediationCandidate;
 import org.crbf.domain.model.optimisation.RemediationDecision;
 import org.crbf.domain.model.optimisation.RemediationPlan;
@@ -55,7 +56,7 @@ public class RiskReportAssembler {
                         List<String> vulnerabilityLookupFailures) {
 
                 List<ArtifactFinding> findings = candidates.stream()
-                                .map(candidate -> toFinding(candidate, findDecision(plan, candidate)))
+                                .map(candidate -> toFinding(candidate, findDecision(plan, candidate), plan.optimisationStatus()))
                                 .toList();
 
                 List<String> scannedArtifacts = uniqueArtifacts.stream()
@@ -68,9 +69,12 @@ public class RiskReportAssembler {
                                 dependencyGraph.size(),
                                 scannedArtifacts,
                                 findings,
+                                plan.optimisationStatus(),
+                                plan.infeasibility(),
                                 toResidualRiskSummary(candidates, plan),
                                 toGlobalValidationSummary(plan.globalGraphValidation()),
-                                vulnerabilityLookupFailures);
+                                vulnerabilityLookupFailures,
+                                plan.availableEffortBudget());
         }
 
         /**
@@ -104,14 +108,14 @@ public class RiskReportAssembler {
         }
 
         private ArtifactFinding toFinding(
-                        RemediationCandidate candidate, Optional<RemediationDecision> decision) {
+                        RemediationCandidate candidate, Optional<RemediationDecision> decision, OptimisationStatus status) {
                 return new ArtifactFinding(
                                 candidate.artifact().gav(),
                                 candidate.contextualRisk(riskWeights),
                                 toCveSummaries(candidate),
                                 toReachabilitySummary(candidate),
                                 toCompatibilitySummary(candidate.compatibilityReport()),
-                                toRemediationSummary(candidate, decision),
+                                toRemediationSummary(candidate, decision, status),
                                 candidate.stabilityReportSummary());
         }
 
@@ -198,8 +202,8 @@ public class RiskReportAssembler {
         }
 
         private RemediationSummary toRemediationSummary(
-                        RemediationCandidate candidate, Optional<RemediationDecision> decision) {
-                UpgradeDecision label = resolveDecisionLabel(candidate, decision);
+                        RemediationCandidate candidate, Optional<RemediationDecision> decision, OptimisationStatus status) {
+                UpgradeDecision label = resolveDecisionLabel(candidate, decision, status);
                 return new RemediationSummary(
                                 label,
                                 resolveRationale(candidate, decision, label),
@@ -215,7 +219,13 @@ public class RiskReportAssembler {
 
         private UpgradeDecision resolveDecisionLabel(
                 RemediationCandidate candidate,
-                Optional<RemediationDecision> decision) {
+                Optional<RemediationDecision> decision, OptimisationStatus status) {
+
+        if (status == OptimisationStatus.INFEASIBLE) {
+                if (candidate.isMandatoryUpgrade()) return UpgradeDecision.MANDATORY_PENDING;
+                if (candidate.hasFixAvailable()) return UpgradeDecision.OPTIONAL_NOT_SELECTED;
+                return candidate.hasAlternativeFix() ? UpgradeDecision.MIGRATION_AVAILABLE : UpgradeDecision.NO_FIX_AVAILABLE;
+        }
 
         return decision
                 .filter(RemediationDecision::shouldUpgrade)

@@ -1,6 +1,9 @@
 package org.crbf.application.model.report;
 
 import java.util.List;
+import java.util.Optional;
+import org.crbf.domain.model.optimisation.InfeasibilityDetails;
+import org.crbf.domain.model.optimisation.OptimisationStatus;
 
 public record RiskReport(
         String projectName,
@@ -8,9 +11,12 @@ public record RiskReport(
         int totalDependencyPaths,
         List<String> scannedArtifacts,
         List<ArtifactFinding> findings,
+        OptimisationStatus optimisationStatus,
+        Optional<InfeasibilityDetails> infeasibility,
         ResidualRiskSummary residualRisk,
         GlobalGraphValidationSummary globalGraphValidation,
-        List<String> vulnerabilityLookupFailures) {
+        List<String> vulnerabilityLookupFailures,
+        Optional<Double> availableEffortBudget) {
     public RiskReport {
         scannedArtifacts = scannedArtifacts == null ? List.of() : List.copyOf(scannedArtifacts);
         findings = findings == null ? List.of() : List.copyOf(findings);

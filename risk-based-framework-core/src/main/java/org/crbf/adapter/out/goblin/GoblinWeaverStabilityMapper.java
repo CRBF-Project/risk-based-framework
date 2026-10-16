@@ -7,7 +7,8 @@ import java.util.Comparator;
 
 /**
  * Maps Goblin Weaver API responses to the domain object
- * {@link EcosystemStability}.
+ * {@link EcosystemStability}. Freshness is required because its domain fields
+ * cannot represent absence; missing values must not be mapped to measured zero.
  */
 class GoblinWeaverStabilityMapper {
 
@@ -19,32 +20,21 @@ class GoblinWeaverStabilityMapper {
             GoblinWeaverReleaseResponse newVersionsResponse,
             Artifact artifact) {
 
-        int versionLag = 0;
-        int toodDays = 0;
-        Double adoptionRate = null;
-        Double adoptionLifespan = null;
-        long releaseTimestamp = 0L;
-
-        if (releaseResponse != null
-                && releaseResponse.nodes() != null
-                && !releaseResponse.nodes().isEmpty()) {
-
-            GoblinWeaverReleaseResponse.GoblinNodeDto node = releaseResponse.nodes().get(0);
-
-            if (node.freshness() != null) {
-                versionLag = parseIntSafe(node.freshness().numberMissedRelease());
-                long outdatedMs = parseLongSafe(node.freshness().outdatedTimeInMs());
-                if (outdatedMs > 0) {
-                    toodDays = (int) (outdatedMs / MS_PER_DAY);
-                }
-            }
-
-            adoptionRate = resolveAdoptionRate(node);
-            adoptionLifespan = node.adoptionLifespan() != null && node.adoptionLifespan() >= 0
-                    ? node.adoptionLifespan()
-                    : null;
-            releaseTimestamp = node.timestamp() != null ? node.timestamp() : 0L;
+        if (releaseResponse == null || releaseResponse.nodes() == null || releaseResponse.nodes().isEmpty()
+                || releaseResponse.nodes().get(0) == null || releaseResponse.nodes().get(0).freshness() == null) {
+            throw new IllegalArgumentException("Goblin freshness data is unavailable");
         }
+        GoblinWeaverReleaseResponse.GoblinNodeDto node = releaseResponse.nodes().get(0);
+        int versionLag = Integer.parseInt(node.freshness().numberMissedRelease());
+        long outdatedMs = Long.parseLong(node.freshness().outdatedTimeInMs());
+        if (versionLag < 0 || outdatedMs < 0) {
+            throw new IllegalArgumentException("Goblin freshness values must be non-negative");
+        }
+        int toodDays = Math.toIntExact(outdatedMs / MS_PER_DAY);
+        Double adoptionRate = resolveAdoptionRate(node);
+        Double adoptionLifespan = node.adoptionLifespan() != null && node.adoptionLifespan() >= 0
+                ? node.adoptionLifespan() : null;
+        long releaseTimestamp = node.timestamp() != null ? node.timestamp() : 0L;
 
         Double maintenanceRate = null;
         if (artifactResponse != null && artifactResponse.nodes() != null) {
@@ -85,23 +75,4 @@ class GoblinWeaverStabilityMapper {
                 .orElse(fallback);
     }
 
-    private int parseIntSafe(String value) {
-        if (value == null)
-            return 0;
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            return 0;
-        }
-    }
-
-    private long parseLongSafe(String value) {
-        if (value == null)
-            return 0L;
-        try {
-            return Long.parseLong(value);
-        } catch (NumberFormatException e) {
-            return 0L;
-        }
-    }
 }

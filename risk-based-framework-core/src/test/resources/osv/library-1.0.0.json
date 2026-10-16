@@ -1,0 +1,29 @@
+{
+  "vulns": [
+    {
+      "id": "GHSA-aaaa-bbbb-cccc",
+      "aliases": ["CVE-2026-1001", "OSV-2026-1001"],
+      "summary": "First synthetic advisory",
+      "details": "First complete source record for library 1.0.0.",
+      "published": "2026-01-01T00:00:00Z",
+      "modified": "2026-02-01T00:00:00Z",
+      "severity": [{"type": "CVSS_V3", "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"}],
+      "affected": [{"package": {"ecosystem": "Maven", "name": "org.example:library"}, "ranges": [{"type": "ECOSYSTEM", "events": [{"introduced": "0"}, {"fixed": "1.1.0"}]}]}],
+      "references": [{"type": "ADVISORY", "url": "https://example.invalid/advisories/first"}],
+      "database_specific": {"cwe_ids": ["CWE-79"]}
+    },
+    {
+      "id": "CVE-2026-1002",
+      "aliases": ["GHSA-dddd-eeee-ffff", "CVE-2026-1001"],
+      "summary": "Second synthetic advisory with a shared alias",
+      "details": "A separate source identifier must not disappear because aliases overlap.",
+      "affected": [{"package": {"ecosystem": "Maven", "name": "org.example:library"}, "versions": ["1.0.0"]}]
+    },
+    {
+      "id": "OSV-2026-1003",
+      "summary": "Third synthetic advisory without severity, aliases or a fix",
+      "details": "Missing optional enrichment must not remove this source record.",
+      "affected": [{"package": {"ecosystem": "Maven", "name": "org.example:library"}, "versions": ["1.0.0"]}]
+    }
+  ]
+}
