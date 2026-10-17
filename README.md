@@ -2,6 +2,12 @@
 
 A Maven plugin that analyses transitive dependencies for known vulnerabilities (CVEs), contextualises risk via static reachability analysis, and produces an optimised remediation plan using a Z3 SMT solver. Output is an HTML report at `target/risk-report.html`.
 
+## Academic Context
+
+CRBF was developed as part of the master's [Dissertation](docs/Dissertation.pdf) at Instituto Superior de Engenharia do Porto (ISEP), Polytechnic of Porto.
+
+The [experimental evaluation](evaluation/README.md) includes the scripts, project definitions and results used to evaluate the framework.
+
 ## Architecture
 
 The project follows a **Hexagonal (Ports & Adapters)** architecture split across two Maven modules:

@@ -72,6 +72,7 @@ replay_pid*
 # Documents
 # =========================
 docs/*
+!docs/Dissertation.pdf
 Agents.md
 eclipse-formatter.xml
 
