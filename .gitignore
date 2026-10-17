@@ -72,9 +72,23 @@ replay_pid*
 # Documents
 # =========================
 docs/*
+!docs/Dissertation.pdf
 Agents.md
 eclipse-formatter.xml
 
 
 # Evaluation checkouts (cloned target projects)
 evaluation/checkouts/
+
+# Evaluation archives and Python caches are local, not definitive evidence.
+evaluation/archive/
+evaluation/**/__pycache__/
+evaluation/**/*.pyc
+
+# Evaluation logs
+evaluation/**/*.log
+
+# Private execution evidence is retained locally, outside the public dataset.
+evaluation/results/**/metadata.json
+evaluation/results/**/integrity.json
+evaluation/results/**/warnings.csv

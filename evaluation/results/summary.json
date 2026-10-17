@@ -1,0 +1,595 @@
+{
+  "missing_reports": [],
+  "projects": {
+    "checkstyle": {
+      "c1": {
+        "cvss_available": 5,
+        "inventory_entries": 32,
+        "occurrences": 6,
+        "vulnerable_dependencies": 6
+      },
+      "c1_c2": {
+        "inventory": {
+          "common": 32,
+          "left_only": 0,
+          "right_only": 0
+        },
+        "occurrences": {
+          "BOTH": 6
+        }
+      },
+      "c2": {
+        "called": {
+          "false": 1,
+          "true": 5
+        },
+        "cvss_available": 5,
+        "inventory_entries": 32,
+        "occurrences": 6,
+        "vulnerable_dependencies": 6
+      },
+      "c2_c3": {
+        "inventory": {
+          "common": 31,
+          "left_only": 1,
+          "right_only": 4
+        },
+        "occurrences": {
+          "BOTH": 6
+        }
+      },
+      "c3": {
+        "available_effort_budget": 30.0,
+        "cvss_available": 5,
+        "failed_vulnerability_lookups": 0,
+        "global_graph_validation": {
+          "analyzed_artifacts": 0,
+          "status": "UNAVAILABLE",
+          "vulnerable_dependencies": 0
+        },
+        "infeasibility": null,
+        "inventory_entries": 35,
+        "occurrences": 6,
+        "optimisation_status": "OPTIMAL",
+        "potential_risk_addressed": 2.402123,
+        "reachability": {
+          "REACHABLE_CONFIRMED": 1,
+          "REACHABLE_PROBABLE": 4,
+          "UNREACHABLE": 1
+        },
+        "remediation": {
+          "RECOMMENDED": 6
+        },
+        "selected_effort": 18.0,
+        "selected_updates": 6,
+        "unselected_risk": {
+          "actionable": 0.0,
+          "blocked": 0.0
+        },
+        "vulnerable_dependencies": 6
+      },
+      "cyclonedx_control": {
+        "components": 36,
+        "inventory_entries": 35,
+        "matches_crbf": true,
+        "matches_osv_sbom": true,
+        "spec_version": "1.6"
+      },
+      "duration_s": {
+        "c1": 0.98,
+        "c2": 6.365,
+        "c3": 435.216,
+        "sbom": 0.836
+      },
+      "sbom": {
+        "cvss_available": 5,
+        "inventory_entries": 35,
+        "occurrences": 6,
+        "vulnerable_dependencies": 6
+      },
+      "sbom_c3": {
+        "inventory": {
+          "common": 35,
+          "left_only": 0,
+          "right_only": 0
+        },
+        "occurrences": {
+          "BOTH": 6
+        }
+      }
+    },
+    "heros": {
+      "c1": {
+        "cvss_available": 3,
+        "inventory_entries": 6,
+        "occurrences": 3,
+        "vulnerable_dependencies": 1
+      },
+      "c1_c2": {
+        "inventory": {
+          "common": 6,
+          "left_only": 0,
+          "right_only": 0
+        },
+        "occurrences": {
+          "BOTH": 3
+        }
+      },
+      "c2": {
+        "called": {
+          "true": 3
+        },
+        "cvss_available": 3,
+        "inventory_entries": 6,
+        "occurrences": 3,
+        "vulnerable_dependencies": 1
+      },
+      "c2_c3": {
+        "inventory": {
+          "common": 5,
+          "left_only": 1,
+          "right_only": 2
+        },
+        "occurrences": {
+          "BOTH": 3
+        }
+      },
+      "c3": {
+        "available_effort_budget": 30.0,
+        "cvss_available": 3,
+        "failed_vulnerability_lookups": 0,
+        "global_graph_validation": {
+          "analyzed_artifacts": 1,
+          "status": "CLEAN",
+          "vulnerable_dependencies": 0
+        },
+        "infeasibility": null,
+        "inventory_entries": 7,
+        "occurrences": 3,
+        "optimisation_status": "OPTIMAL",
+        "potential_risk_addressed": 0.5102580000000001,
+        "reachability": {
+          "REACHABLE_PROBABLE": 3
+        },
+        "remediation": {
+          "RECOMMENDED": 1
+        },
+        "selected_effort": 4.0,
+        "selected_updates": 1,
+        "unselected_risk": {
+          "actionable": 0.0,
+          "blocked": 0.0
+        },
+        "vulnerable_dependencies": 1
+      },
+      "cyclonedx_control": {
+        "components": 7,
+        "inventory_entries": 7,
+        "matches_crbf": true,
+        "matches_osv_sbom": true,
+        "spec_version": "1.6"
+      },
+      "duration_s": {
+        "c1": 0.821,
+        "c2": 1.695,
+        "c3": 9.367,
+        "sbom": 0.782
+      },
+      "sbom": {
+        "cvss_available": 3,
+        "inventory_entries": 7,
+        "occurrences": 3,
+        "vulnerable_dependencies": 1
+      },
+      "sbom_c3": {
+        "inventory": {
+          "common": 7,
+          "left_only": 0,
+          "right_only": 0
+        },
+        "occurrences": {
+          "BOTH": 3
+        }
+      }
+    },
+    "my-blog": {
+      "c1": {
+        "cvss_available": 59,
+        "inventory_entries": 49,
+        "occurrences": 59,
+        "vulnerable_dependencies": 9
+      },
+      "c1_c2": {
+        "inventory": {
+          "common": 49,
+          "left_only": 0,
+          "right_only": 0
+        },
+        "occurrences": {
+          "BOTH": 59
+        }
+      },
+      "c2": {
+        "called": {
+          "false": 7,
+          "true": 52
+        },
+        "cvss_available": 59,
+        "inventory_entries": 49,
+        "occurrences": 59,
+        "vulnerable_dependencies": 9
+      },
+      "c2_c3": {
+        "inventory": {
+          "common": 28,
+          "left_only": 21,
+          "right_only": 24
+        },
+        "occurrences": {
+          "BOTH": 59,
+          "RIGHT_ONLY": 63
+        }
+      },
+      "c3": {
+        "available_effort_budget": 30.0,
+        "cvss_available": 122,
+        "failed_vulnerability_lookups": 0,
+        "global_graph_validation": {
+          "analyzed_artifacts": 0,
+          "status": "UNAVAILABLE",
+          "vulnerable_dependencies": 0
+        },
+        "infeasibility": null,
+        "inventory_entries": 52,
+        "occurrences": 122,
+        "optimisation_status": "OPTIMAL",
+        "potential_risk_addressed": 4.9635174736842105,
+        "reachability": {
+          "REACHABLE_CONFIRMED": 2,
+          "REACHABLE_PROBABLE": 90,
+          "UNKNOWN": 15,
+          "UNREACHABLE": 15
+        },
+        "remediation": {
+          "DEFER": 10,
+          "MANDATORY": 4,
+          "RECOMMENDED": 5
+        },
+        "selected_effort": 30.0,
+        "selected_updates": 9,
+        "unselected_risk": {
+          "actionable": 2.5178501971014495,
+          "blocked": 0.0
+        },
+        "vulnerable_dependencies": 19
+      },
+      "cyclonedx_control": {
+        "components": 52,
+        "inventory_entries": 52,
+        "matches_crbf": true,
+        "matches_osv_sbom": true,
+        "spec_version": "1.6"
+      },
+      "duration_s": {
+        "c1": 1.374,
+        "c2": 4.896,
+        "c3": 55.687,
+        "sbom": 1.752
+      },
+      "sbom": {
+        "cvss_available": 122,
+        "inventory_entries": 52,
+        "occurrences": 122,
+        "vulnerable_dependencies": 19
+      },
+      "sbom_c3": {
+        "inventory": {
+          "common": 52,
+          "left_only": 0,
+          "right_only": 0
+        },
+        "occurrences": {
+          "BOTH": 122
+        }
+      }
+    },
+    "specialsource": {
+      "c1": {
+        "cvss_available": 5,
+        "inventory_entries": 15,
+        "occurrences": 5,
+        "vulnerable_dependencies": 4
+      },
+      "c1_c2": {
+        "inventory": {
+          "common": 15,
+          "left_only": 0,
+          "right_only": 0
+        },
+        "occurrences": {
+          "BOTH": 5
+        }
+      },
+      "c2": {
+        "called": {
+          "false": 2,
+          "true": 3
+        },
+        "cvss_available": 5,
+        "inventory_entries": 15,
+        "occurrences": 5,
+        "vulnerable_dependencies": 4
+      },
+      "c2_c3": {
+        "inventory": {
+          "common": 14,
+          "left_only": 1,
+          "right_only": 4
+        },
+        "occurrences": {
+          "BOTH": 5
+        }
+      },
+      "c3": {
+        "available_effort_budget": 30.0,
+        "cvss_available": 5,
+        "failed_vulnerability_lookups": 0,
+        "global_graph_validation": {
+          "analyzed_artifacts": 0,
+          "status": "UNAVAILABLE",
+          "vulnerable_dependencies": 0
+        },
+        "infeasibility": null,
+        "inventory_entries": 18,
+        "occurrences": 5,
+        "optimisation_status": "OPTIMAL",
+        "potential_risk_addressed": 1.1137668,
+        "reachability": {
+          "REACHABLE_PROBABLE": 3,
+          "UNREACHABLE": 2
+        },
+        "remediation": {
+          "RECOMMENDED": 4
+        },
+        "selected_effort": 11.0,
+        "selected_updates": 4,
+        "unselected_risk": {
+          "actionable": 0.0,
+          "blocked": 0.0
+        },
+        "vulnerable_dependencies": 4
+      },
+      "cyclonedx_control": {
+        "components": 18,
+        "inventory_entries": 18,
+        "matches_crbf": true,
+        "matches_osv_sbom": true,
+        "spec_version": "1.6"
+      },
+      "duration_s": {
+        "c1": 0.884,
+        "c2": 2.02,
+        "c3": 13.402,
+        "sbom": 0.988
+      },
+      "sbom": {
+        "cvss_available": 5,
+        "inventory_entries": 18,
+        "occurrences": 5,
+        "vulnerable_dependencies": 4
+      },
+      "sbom_c3": {
+        "inventory": {
+          "common": 18,
+          "left_only": 0,
+          "right_only": 0
+        },
+        "occurrences": {
+          "BOTH": 5
+        }
+      }
+    },
+    "spring-boot-security-jwt": {
+      "c1": {
+        "cvss_available": 39,
+        "inventory_entries": 66,
+        "occurrences": 39,
+        "vulnerable_dependencies": 9
+      },
+      "c1_c2": {
+        "inventory": {
+          "common": 66,
+          "left_only": 0,
+          "right_only": 0
+        },
+        "occurrences": {
+          "BOTH": 39
+        }
+      },
+      "c2": {
+        "called": {
+          "false": 1,
+          "true": 38
+        },
+        "cvss_available": 39,
+        "inventory_entries": 66,
+        "occurrences": 39,
+        "vulnerable_dependencies": 9
+      },
+      "c2_c3": {
+        "inventory": {
+          "common": 39,
+          "left_only": 27,
+          "right_only": 35
+        },
+        "occurrences": {
+          "BOTH": 39,
+          "RIGHT_ONLY": 54
+        }
+      },
+      "c3": {
+        "available_effort_budget": 30.0,
+        "cvss_available": 93,
+        "failed_vulnerability_lookups": 0,
+        "global_graph_validation": {
+          "analyzed_artifacts": 0,
+          "status": "UNAVAILABLE",
+          "vulnerable_dependencies": 0
+        },
+        "infeasibility": null,
+        "inventory_entries": 74,
+        "occurrences": 93,
+        "optimisation_status": "OPTIMAL",
+        "potential_risk_addressed": 6.0194295,
+        "reachability": {
+          "REACHABLE_CONFIRMED": 11,
+          "REACHABLE_PROBABLE": 62,
+          "UNKNOWN": 3,
+          "UNREACHABLE": 17
+        },
+        "remediation": {
+          "DEFER": 9,
+          "MANDATORY": 3,
+          "RECOMMENDED": 7
+        },
+        "selected_effort": 30.0,
+        "selected_updates": 10,
+        "unselected_risk": {
+          "actionable": 1.7671592666666667,
+          "blocked": 0.0
+        },
+        "vulnerable_dependencies": 19
+      },
+      "cyclonedx_control": {
+        "components": 74,
+        "inventory_entries": 74,
+        "matches_crbf": true,
+        "matches_osv_sbom": true,
+        "spec_version": "1.6"
+      },
+      "duration_s": {
+        "c1": 1.36,
+        "c2": 7.527,
+        "c3": 68.602,
+        "sbom": 1.801
+      },
+      "sbom": {
+        "cvss_available": 93,
+        "inventory_entries": 74,
+        "occurrences": 93,
+        "vulnerable_dependencies": 19
+      },
+      "sbom_c3": {
+        "inventory": {
+          "common": 74,
+          "left_only": 0,
+          "right_only": 0
+        },
+        "occurrences": {
+          "BOTH": 93
+        }
+      }
+    },
+    "websocket-demo": {
+      "c1": {
+        "cvss_available": 124,
+        "inventory_entries": 57,
+        "occurrences": 125,
+        "vulnerable_dependencies": 21
+      },
+      "c1_c2": {
+        "inventory": {
+          "common": 57,
+          "left_only": 0,
+          "right_only": 0
+        },
+        "occurrences": {
+          "BOTH": 125
+        }
+      },
+      "c2": {
+        "called": {
+          "false": 23,
+          "true": 102
+        },
+        "cvss_available": 124,
+        "inventory_entries": 57,
+        "occurrences": 125,
+        "vulnerable_dependencies": 21
+      },
+      "c2_c3": {
+        "inventory": {
+          "common": 37,
+          "left_only": 20,
+          "right_only": 26
+        },
+        "occurrences": {
+          "BOTH": 125,
+          "RIGHT_ONLY": 69
+        }
+      },
+      "c3": {
+        "available_effort_budget": 30.0,
+        "cvss_available": 193,
+        "failed_vulnerability_lookups": 0,
+        "global_graph_validation": {
+          "analyzed_artifacts": 0,
+          "status": "UNAVAILABLE",
+          "vulnerable_dependencies": 0
+        },
+        "infeasibility": null,
+        "inventory_entries": 63,
+        "occurrences": 194,
+        "optimisation_status": "OPTIMAL",
+        "potential_risk_addressed": 5.74998488277512,
+        "reachability": {
+          "REACHABLE_CONFIRMED": 2,
+          "REACHABLE_PROBABLE": 78,
+          "UNKNOWN": 21,
+          "UNREACHABLE": 93
+        },
+        "remediation": {
+          "DEFER": 24,
+          "MANDATORY": 4,
+          "RECOMMENDED": 6
+        },
+        "selected_effort": 30.0,
+        "selected_updates": 10,
+        "unselected_risk": {
+          "actionable": 3.50774040952381,
+          "blocked": 0.0
+        },
+        "vulnerable_dependencies": 34
+      },
+      "cyclonedx_control": {
+        "components": 63,
+        "inventory_entries": 63,
+        "matches_crbf": true,
+        "matches_osv_sbom": true,
+        "spec_version": "1.6"
+      },
+      "duration_s": {
+        "c1": 1.518,
+        "c2": 5.038,
+        "c3": 436.729,
+        "sbom": 2.014
+      },
+      "sbom": {
+        "cvss_available": 193,
+        "inventory_entries": 63,
+        "occurrences": 194,
+        "vulnerable_dependencies": 34
+      },
+      "sbom_c3": {
+        "inventory": {
+          "common": 63,
+          "left_only": 0,
+          "right_only": 0
+        },
+        "occurrences": {
+          "BOTH": 194
+        }
+      }
+    }
+  }
+}

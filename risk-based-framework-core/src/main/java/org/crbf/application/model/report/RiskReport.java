@@ -13,7 +13,7 @@ public record RiskReport(
         List<ArtifactFinding> findings,
         OptimisationStatus optimisationStatus,
         Optional<InfeasibilityDetails> infeasibility,
-        ResidualRiskSummary residualRisk,
+        ResidualRiskSummary unselectedRisk,
         GlobalGraphValidationSummary globalGraphValidation,
         List<String> vulnerabilityLookupFailures,
         Optional<Double> availableEffortBudget) {

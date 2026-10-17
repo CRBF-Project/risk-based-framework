@@ -33,7 +33,6 @@ import org.crbf.domain.model.artifact.LocatedArtifact;
 import org.crbf.domain.model.artifact.Scope;
 import org.crbf.domain.model.artifact.TransitiveDepsResult;
 import org.crbf.domain.model.artifact.Version;
-import org.crbf.domain.model.compatibility.CompatibilityReport;
 import org.crbf.domain.model.optimisation.GlobalGraphValidation;
 import org.crbf.domain.model.optimisation.RemediationCandidate;
 import org.crbf.domain.model.optimisation.RemediationDecision;
@@ -185,12 +184,10 @@ public class AnalyseDependencyRiskService implements AnalyseDependencyRiskUseCas
                         Optional<EcosystemStability> fixStability = loadStabilityMetrics(fixArtifact, true);
                         fixStability.ifPresent(s -> logger.logStability(fixArtifact, s, "Fix version"));
 
-                        Optional<CompatibilityReport> contextualReport = validation.compatibilityReport()
-                                        .map(r -> r.contextualise(callGraph));
-
                         return Optional.of(new RemediationCandidate(locatedArtifact.artifact(),
                                         vulnerabilities, reachabilityResults,
-                                        contextualReport, Optional.of(validation.proposedVersion()),
+                                        validation.compatibilityReport().map(report -> report.contextualise(callGraph)),
+                                        Optional.of(validation.proposedVersion()),
                                         Optional.empty(),
                                         currentStability, fixStability, Optional.of(validation)));
                 }

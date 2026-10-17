@@ -1,9 +1,9 @@
 package org.crbf.application.model.report;
 
 /**
- * Splits total residual risk (deferred candidates' contextual risk, summed)
+ * Splits current risk outside the selected updates (deferred candidates' contextual risk, summed)
  * by whether a remediation path is actually known, so the two are never
- * conflated into a single number:
+ * conflated into a single number. This does not estimate post-update residual risk:
  *
  * @param actionable Risk that remains only because it wasn't selected this
  *                    round — either deferred for budget reasons with a real

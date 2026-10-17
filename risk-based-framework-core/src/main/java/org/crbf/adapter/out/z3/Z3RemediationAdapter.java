@@ -108,10 +108,10 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
 
         applyHardConstraints(ctx, optimizer, candidates, upgradeVars);
 
-        ArithExpr<RealSort> totalRiskReduction = buildRiskObjective(ctx, candidates, upgradeVars);
+        ArithExpr<RealSort> totalPotentialRiskAddressed = buildRiskObjective(ctx, candidates, upgradeVars);
         ArithExpr<RealSort> totalEffort = buildEffortSum(ctx, candidates, upgradeVars);
 
-        optimizer.MkMaximize(totalRiskReduction);
+        optimizer.MkMaximize(totalPotentialRiskAddressed);
         BoolExpr budgetConstraint = ctx.mkLe(totalEffort, ctx.mkReal(Double.toString(effortBudget)));
         optimizer.Add(budgetConstraint);
 
@@ -140,14 +140,14 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
                         (!c.hasFixAvailable() ? "No fix version available. "
                                 : c.isMandatoryUpgrade() ? "Mandatory upgrade pending. " : "Optional upgrade not selected. ") + reason))
                 .toList();
-        double residualRisk = candidates.stream()
+        double unselectedRisk = candidates.stream()
                 .mapToDouble(c -> c.contextualRisk(riskWeights)).sum();
         List<InfeasibilityDetails.MandatoryUpgrade> pending = candidates.stream()
                 .filter(RemediationCandidate::isMandatoryUpgrade)
                 .map(c -> new InfeasibilityDetails.MandatoryUpgrade(
                         c.artifact().gav(), c.fixVersion().orElseThrow(), c.upgradeCost()))
                 .toList();
-        return new RemediationPlan(decisions, 0.0, residualRisk, 0.0,
+        return new RemediationPlan(decisions, 0.0, unselectedRisk, 0.0,
                 OptimisationStatus.INFEASIBLE, GlobalGraphValidation.notRun(),
                 Optional.of(InfeasibilityDetails.of(cause, effortBudget, pending)));
     }
@@ -217,8 +217,8 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
             BoolExpr[] upgradeVars) {
 
         List<RemediationDecision> decisions = new ArrayList<>();
-        double totalRiskReduction = 0.0;
-        double totalResidualRisk = 0.0;
+        double totalPotentialRiskAddressed = 0.0;
+        double totalUnselectedRisk = 0.0;
         double totalEffort = 0.0;
 
         for (int i = 0; i < candidates.size(); i++) {
@@ -231,13 +231,13 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
             if (shouldUpgrade) {
                 double risk = c.contextualRisk(riskWeights);
                 double effort = c.upgradeCost();
-                totalRiskReduction += risk;
+                totalPotentialRiskAddressed += risk;
                 totalEffort += effort;
                 decision = RemediationDecision.upgrade(
                         c.artifact(), c.fixVersion().orElseThrow(), risk, effort,
                         buildUpgradeRationale(c));
             } else {
-                totalResidualRisk += c.contextualRisk(riskWeights);
+                totalUnselectedRisk += c.contextualRisk(riskWeights);
                 decision = RemediationDecision.defer(
                         c.artifact(),
                         buildDeferRationale(c));
@@ -245,7 +245,7 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
             decisions.add(decision);
         }
 
-        return new RemediationPlan(decisions, totalRiskReduction, totalResidualRisk, totalEffort,
+        return new RemediationPlan(decisions, totalPotentialRiskAddressed, totalUnselectedRisk, totalEffort,
                 OptimisationStatus.OPTIMAL, GlobalGraphValidation.notRun());
     }
 
@@ -272,8 +272,8 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
                 .filter(RemediationCandidate::isMandatoryUpgrade)
                 .mapToDouble(RemediationCandidate::upgradeCost).sum();
         List<RemediationDecision> decisions = new ArrayList<>();
-        double totalRiskReduction = 0.0;
-        double totalResidualRisk = 0.0;
+        double totalPotentialRiskAddressed = 0.0;
+        double totalUnselectedRisk = 0.0;
         double totalEffort = 0.0;
 
         for (RemediationCandidate c : sorted) {
@@ -285,14 +285,15 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
                 double effort = c.upgradeCost();
                 if (!forced)
                     remainingBudget -= effort;
-                totalRiskReduction += risk;
+                totalPotentialRiskAddressed += risk;
                 totalEffort += effort;
                 decisions.add(RemediationDecision.upgrade(
                         c.artifact(), c.fixVersion().orElseThrow(), risk, effort,
-                        forced ? "Greedy fallback (mandatory: CRITICAL+REACHABLE)."
-                                : "Greedy fallback: highest risk/effort ratio within budget."));
+                        (forced ? "Greedy fallback (mandatory: CRITICAL+REACHABLE)."
+                                : "Greedy fallback: highest risk/effort ratio within budget.")
+                                + recommendationLimitations(c)));
             } else {
-                totalResidualRisk += c.contextualRisk(riskWeights);
+                totalUnselectedRisk += c.contextualRisk(riskWeights);
                 decisions.add(RemediationDecision.defer(
                         c.artifact(), "Greedy fallback: insufficient budget remaining."));
             }
@@ -301,21 +302,31 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
         for (RemediationCandidate c : candidates) {
             if (!c.hasFixAvailable()) {
                 decisions.add(RemediationDecision.defer(c.artifact(), "No fix version available."));
-                totalResidualRisk += c.contextualRisk(riskWeights);
+                totalUnselectedRisk += c.contextualRisk(riskWeights);
             }
         }
 
-        return new RemediationPlan(decisions, totalRiskReduction, totalResidualRisk, totalEffort,
+        return new RemediationPlan(decisions, totalPotentialRiskAddressed, totalUnselectedRisk, totalEffort,
                 OptimisationStatus.GREEDY_FALLBACK, GlobalGraphValidation.notRun());
+    }
+
+    private String recommendationLimitations(RemediationCandidate c) {
+        String path = c.upgradePathValidation().map(v -> v.upgradePathStatus().name()).orElse("UNKNOWN");
+        String missing = path.equals("UNKNOWN")
+                ? " Missing path data does not establish a clean path; the neutral priority factor is retained." : "";
+        return " Upgrade path: " + path + "." + missing + " Potentially addressed risk is the current contextual score,"
+                + " not verified risk reduction. Risk after updating is not calculated; vulnerabilities may remain."
+                + " Contextual compatibility and effort are static-analysis estimates; reflection may be missed."
+                + " Combined update compatibility is not established.";
     }
 
     private String buildUpgradeRationale(RemediationCandidate c) {
         String prefix = c.isMandatoryUpgrade()
                 ? "Mandatory (CRITICAL + REACHABLE). "
-                : "Optimal: maximises risk reduction within effort budget. ";
+                : "Optimal: maximises potentially addressed risk within effort budget. ";
 
         String compatStr = c.compatibilityReport()
-                .map(r -> r.status().name())
+                .map(r -> "japicmp=" + r.status().name() + "; contextual=" + r.contextualStatus().name())
                 .orElse(CompatibilityStatus.UNKNOWN.name());
 
         String stabilityStr = c.fixVersionStability()
@@ -323,14 +334,15 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
                 .map(s -> String.format(Locale.ROOT, "StabilityScore=%.2f", s.value()))
                 .orElse("StabilityScore=N/A");
 
-        return String.format(Locale.ROOT, "%sRisk=%.2f | Effort=%.1f units (%s) | %s.",
-                prefix, c.contextualRisk(riskWeights), c.upgradeCost(), compatStr, stabilityStr);
+        return String.format(Locale.ROOT, "%sPotentially addressed risk=%.2f | Effort=%.1f units (%s) | %s.",
+                prefix, c.contextualRisk(riskWeights), c.upgradeCost(), compatStr, stabilityStr)
+                + recommendationLimitations(c);
     }
 
     /**
      * A deferral is not a statement that the risk is small. The optimiser
-     * maximises total risk reduction under the effort budget, so an artifact is
-     * deferred because its upgrade cost bought less reduction than the upgrades
+     * maximises total potentially addressed risk under the effort budget, so an artifact is
+     * deferred because its upgrade cost bought less potentially addressed risk than the upgrades
      * that were selected. Reporting it as "risk within an acceptable threshold"
      * contradicts the plan whenever a deferred artifact outranks a selected one
      * on risk alone, so the rationale names the cost that drove the decision.
@@ -341,14 +353,14 @@ public class Z3RemediationAdapter implements OptimiseRemediationPort {
         }
 
         String compatStr = c.compatibilityReport()
-                .map(r -> r.status().name())
+                .map(r -> "japicmp=" + r.status().name() + "; contextual=" + r.contextualStatus().name())
                 .orElse(CompatibilityStatus.UNKNOWN.name());
 
         return String.format(
                 Locale.ROOT,
                 "Not selected under the effort budget: upgrading costs %.1f units (%s), "
-                        + "and the budget bought more risk reduction elsewhere. "
-                        + "Residual risk %.2f remains unmitigated.",
+                        + "and the budget bought more potentially addressed risk elsewhere. "
+                        + "Unselected contextual risk %.2f remains outside this plan.",
                 c.upgradeCost(), compatStr, c.contextualRisk(riskWeights));
     }
 }
