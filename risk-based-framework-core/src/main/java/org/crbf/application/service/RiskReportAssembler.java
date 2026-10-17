@@ -71,21 +71,21 @@ public class RiskReportAssembler {
                                 findings,
                                 plan.optimisationStatus(),
                                 plan.infeasibility(),
-                                toResidualRiskSummary(candidates, plan),
+                                toUnselectedRiskSummary(candidates, plan),
                                 toGlobalValidationSummary(plan.globalGraphValidation()),
                                 vulnerabilityLookupFailures,
                                 plan.availableEffortBudget());
         }
 
         /**
-         * Splits residual risk (deferred candidates' contextual risk) into
+         * Splits unselected risk (deferred candidates' contextual risk) into
          * "actionable" — a fix or a known migration path exists, it just wasn't
          * selected or isn't automatable — versus "blocked" — no remediation
-         * path is known at all. The Z3 optimiser's own totalResidualRisk sums
+         * path is known at all. The Z3 optimiser's own totalUnselectedRisk sums
          * both together; this only adds a partition on top, computed with the
          * same {@link RiskWeights} the optimiser used, without touching it.
          */
-        private ResidualRiskSummary toResidualRiskSummary(
+        private ResidualRiskSummary toUnselectedRiskSummary(
                         List<RemediationCandidate> candidates, RemediationPlan plan) {
                 double actionable = 0.0;
                 double blocked = 0.0;
@@ -159,16 +159,13 @@ public class RiskReportAssembler {
 
         private CompatibilitySummary toCompatibilitySummary(Optional<CompatibilityReport> cr) {
                 return cr.map(report -> {
-                        boolean contextuallyAdjusted = report.status() == CompatibilityStatus.COMPATIBLE
-                                        && report.breakingChangeCount() > 0;
                         return new CompatibilitySummary(
                                         report.status(),
                                         report.breakingChangeCount(),
                                         summarizeByType(report.breakingChanges()),
-                                        topChanges(report.breakingChanges(), 25),
-                                        contextuallyAdjusted);
+                                        topChanges(report.breakingChanges(), 25), report.contextualStatus());
                 }).orElse(new CompatibilitySummary(
-                                CompatibilityStatus.UNKNOWN, 0, Map.of(), List.of(), false));
+                                CompatibilityStatus.UNKNOWN, 0, Map.of(), List.of(), CompatibilityStatus.UNKNOWN));
         }
 
         private Map<String, Integer> summarizeByType(List<String> changes) {
@@ -207,7 +204,7 @@ public class RiskReportAssembler {
                 return new RemediationSummary(
                                 label,
                                 resolveRationale(candidate, decision, label),
-                                decision.map(RemediationDecision::riskReduction).orElse(0.0),
+                                decision.map(RemediationDecision::potentialRiskAddressed).orElse(0.0),
                                 decision.map(RemediationDecision::effortCost).orElse(0.0),
                                 candidate.fixVersion().orElse(null),
                                 candidate.alternativeFix().map(this::toAlternativeFixSummary));

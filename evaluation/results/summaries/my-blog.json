@@ -1,0 +1,125 @@
+{
+  "c1": {
+    "cvss_available": 59,
+    "inventory_entries": 49,
+    "occurrences": 59,
+    "vulnerable_dependencies": 9
+  },
+  "c1_c2": {
+    "inventory": {
+      "common": 49,
+      "left_only": 0,
+      "right_only": 0
+    },
+    "occurrences": {
+      "BOTH": 59
+    }
+  },
+  "c2": {
+    "called": {
+      "false": 7,
+      "true": 52
+    },
+    "cvss_available": 59,
+    "inventory_entries": 49,
+    "occurrences": 59,
+    "vulnerable_dependencies": 9
+  },
+  "c2_c3": {
+    "inventory": {
+      "common": 28,
+      "left_only": 21,
+      "right_only": 24
+    },
+    "occurrences": {
+      "BOTH": 59,
+      "RIGHT_ONLY": 63
+    }
+  },
+  "c3": {
+    "available_effort_budget": 30.0,
+    "cvss_available": 122,
+    "global_graph_validation": {
+      "analyzed_artifacts": 0,
+      "status": "UNAVAILABLE",
+      "vulnerable_dependencies": 0
+    },
+    "infeasibility": null,
+    "inventory_entries": 52,
+    "occurrences": 122,
+    "optimisation_status": "OPTIMAL",
+    "potential_risk_addressed": 4.9635174736842105,
+    "reachability": {
+      "REACHABLE_CONFIRMED": 2,
+      "REACHABLE_PROBABLE": 90,
+      "UNKNOWN": 15,
+      "UNREACHABLE": 15
+    },
+    "remediation": {
+      "DEFER": 10,
+      "MANDATORY": 4,
+      "RECOMMENDED": 5
+    },
+    "selected_effort": 30.0,
+    "selected_updates": 9,
+    "unselected_risk": {
+      "actionable": 2.5178501971014495,
+      "blocked": 0.0
+    },
+    "vulnerability_lookup_failures": [],
+    "vulnerable_dependencies": 19
+  },
+  "cyclonedx_control": {
+    "components": 52,
+    "inventory_entries": 52,
+    "matches_crbf": true,
+    "matches_osv_sbom": true,
+    "spec_version": "1.6"
+  },
+  "duration_s": {
+    "c1": 1.374,
+    "c2": 4.896,
+    "c3": 55.687,
+    "sbom": 1.752
+  },
+  "missing_reports": [],
+  "project_id": "my-blog",
+  "reachability_cross_tab": [
+    {
+      "crbf_reachability": "UNREACHABLE",
+      "occurrences": 7,
+      "osv_called": "false"
+    },
+    {
+      "crbf_reachability": "REACHABLE_CONFIRMED",
+      "occurrences": 1,
+      "osv_called": "true"
+    },
+    {
+      "crbf_reachability": "REACHABLE_PROBABLE",
+      "occurrences": 38,
+      "osv_called": "true"
+    },
+    {
+      "crbf_reachability": "UNKNOWN",
+      "occurrences": 13,
+      "osv_called": "true"
+    }
+  ],
+  "sbom": {
+    "cvss_available": 122,
+    "inventory_entries": 52,
+    "occurrences": 122,
+    "vulnerable_dependencies": 19
+  },
+  "sbom_c3": {
+    "inventory": {
+      "common": 52,
+      "left_only": 0,
+      "right_only": 0
+    },
+    "occurrences": {
+      "BOTH": 122
+    }
+  }
+}

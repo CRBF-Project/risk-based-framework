@@ -1,0 +1,116 @@
+{
+  "c1": {
+    "cvss_available": 5,
+    "inventory_entries": 32,
+    "occurrences": 6,
+    "vulnerable_dependencies": 6
+  },
+  "c1_c2": {
+    "inventory": {
+      "common": 32,
+      "left_only": 0,
+      "right_only": 0
+    },
+    "occurrences": {
+      "BOTH": 6
+    }
+  },
+  "c2": {
+    "called": {
+      "false": 1,
+      "true": 5
+    },
+    "cvss_available": 5,
+    "inventory_entries": 32,
+    "occurrences": 6,
+    "vulnerable_dependencies": 6
+  },
+  "c2_c3": {
+    "inventory": {
+      "common": 31,
+      "left_only": 1,
+      "right_only": 4
+    },
+    "occurrences": {
+      "BOTH": 6
+    }
+  },
+  "c3": {
+    "available_effort_budget": 30.0,
+    "cvss_available": 5,
+    "global_graph_validation": {
+      "analyzed_artifacts": 0,
+      "status": "UNAVAILABLE",
+      "vulnerable_dependencies": 0
+    },
+    "infeasibility": null,
+    "inventory_entries": 35,
+    "occurrences": 6,
+    "optimisation_status": "OPTIMAL",
+    "potential_risk_addressed": 2.402123,
+    "reachability": {
+      "REACHABLE_CONFIRMED": 1,
+      "REACHABLE_PROBABLE": 4,
+      "UNREACHABLE": 1
+    },
+    "remediation": {
+      "RECOMMENDED": 6
+    },
+    "selected_effort": 18.0,
+    "selected_updates": 6,
+    "unselected_risk": {
+      "actionable": 0.0,
+      "blocked": 0.0
+    },
+    "vulnerability_lookup_failures": [],
+    "vulnerable_dependencies": 6
+  },
+  "cyclonedx_control": {
+    "components": 36,
+    "inventory_entries": 35,
+    "matches_crbf": true,
+    "matches_osv_sbom": true,
+    "spec_version": "1.6"
+  },
+  "duration_s": {
+    "c1": 0.98,
+    "c2": 6.365,
+    "c3": 435.216,
+    "sbom": 0.836
+  },
+  "missing_reports": [],
+  "project_id": "checkstyle",
+  "reachability_cross_tab": [
+    {
+      "crbf_reachability": "UNREACHABLE",
+      "occurrences": 1,
+      "osv_called": "false"
+    },
+    {
+      "crbf_reachability": "REACHABLE_CONFIRMED",
+      "occurrences": 1,
+      "osv_called": "true"
+    },
+    {
+      "crbf_reachability": "REACHABLE_PROBABLE",
+      "occurrences": 4,
+      "osv_called": "true"
+    }
+  ],
+  "sbom": {
+    "cvss_available": 5,
+    "inventory_entries": 35,
+    "occurrences": 6,
+    "vulnerable_dependencies": 6
+  },
+  "sbom_c3": {
+    "inventory": {
+      "common": 35,
+      "left_only": 0,
+      "right_only": 0
+    },
+    "occurrences": {
+      "BOTH": 6
+    }
+  }
+}

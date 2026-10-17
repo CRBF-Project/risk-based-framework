@@ -71,6 +71,7 @@ class AnalyseDependencyRiskServiceTest {
     private ExportVexPort exportVexPort;
     private ResolveTransitiveDependenciesPort resolveTransitiveDependenciesPort;
     private ExportRiskReportPort exportRiskReportPort;
+    private DetectBreakingChangesPort detectBreakingChangesPort;
 
     private AnalyseDependencyRiskService service;
 
@@ -85,6 +86,7 @@ class AnalyseDependencyRiskServiceTest {
         exportVexPort = mock(ExportVexPort.class);
         resolveTransitiveDependenciesPort = mock(ResolveTransitiveDependenciesPort.class);
         exportRiskReportPort = mock(ExportRiskReportPort.class);
+        detectBreakingChangesPort = mock(DetectBreakingChangesPort.class);
 
         when(analyseReachabilityPort.buildCallGraph(any(), anyList()))
                 .thenReturn(ProjectCallGraph.empty());
@@ -101,7 +103,7 @@ class AnalyseDependencyRiskServiceTest {
                 loadEpssScoresPort,
                 loadStabilityMetricsPort,
                 analyseReachabilityPort,
-                mock(DetectBreakingChangesPort.class),
+                detectBreakingChangesPort,
                 resolveTransitiveDependenciesPort,
                 optimiseRemediationPort,
                 new RiskReportAssembler(),
@@ -254,6 +256,61 @@ class AnalyseDependencyRiskServiceTest {
         verify(analyseReachabilityPort).buildCallGraph(any(), scopeJars.capture());
 
         assertEquals(List.of(compileJar), scopeJars.getValue());
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {
+            "[BINARY] Method fixture.Api#removed() — METHOD_REMOVED",
+            "[BINARY] Class fixture.Api — CLASS_REMOVED",
+            "[BINARY] Field fixture.Api#removed — FIELD_REMOVED" })
+    void shouldPreserveJapicmpIncompatibilityWhenAffectedUsageIsAbsentFromCallGraph(String change) {
+        RemediationCandidate candidate = analyseIncompatibleUpgrade(change);
+        assertEquals(org.crbf.domain.model.compatibility.CompatibilityStatus.BINARY_INCOMPATIBLE,
+                candidate.compatibilityReport().orElseThrow().status());
+    }
+
+    @Test
+    void shouldRetainOriginalEffortWhenContextualHeuristicCannotEvaluateChanges() {
+        RemediationCandidate candidate = analyseIncompatibleUpgrade(
+                "[BINARY] Class fixture.Api — CLASS_REMOVED");
+        assertEquals(4.0, candidate.upgradeCost());
+    }
+
+    @Test
+    void shouldUseReducedEffortWhenMappedAffectedMethodsAreNotObserved() {
+        RemediationCandidate candidate = analyseIncompatibleUpgrade(
+                "[BINARY] Method fixture.Api#removed() — METHOD_REMOVED");
+        assertEquals(1.0, candidate.upgradeCost());
+    }
+
+    @SuppressWarnings("unchecked")
+    private RemediationCandidate analyseIncompatibleUpgrade(String change) {
+        Artifact current = Artifact.create("org.example", "library", "1.0.0", Scope.COMPILE);
+        Artifact target = Artifact.create("org.example", "library", "2.0.0", Scope.COMPILE);
+        LocatedArtifact locatedCurrent = new LocatedArtifact(current, Path.of("/repo/library-1.jar"));
+        LocatedArtifact locatedTarget = new LocatedArtifact(target, Path.of("/repo/library-2.jar"));
+        stubResolution(current, locatedCurrent.physicalJarPath());
+        stubResolution(target, locatedTarget.physicalJarPath());
+        Vulnerability v = Vulnerability.create("CVE-2026-1001", 8, "TEST_VECTOR", Optional.of("2.0.0"),
+                Optional.empty(), List.of(), "", "", List.of(), Optional.empty(), Optional.empty(), "", "");
+        when(loadVulnerabilitiesPort.loadVulnerabilities(current)).thenReturn(List.of(v));
+        when(loadVulnerabilitiesPort.loadVulnerabilities(target)).thenReturn(List.of());
+        when(resolveTransitiveDependenciesPort.getNewerVersionsWithCves(current)).thenReturn(List.of());
+        when(resolveTransitiveDependenciesPort.resolveTransitiveDepsWithCves(current))
+                .thenReturn(org.crbf.domain.model.artifact.TransitiveDepsResult.of(Set.of(), List.of()));
+        when(resolveTransitiveDependenciesPort.resolveTransitiveDepsWithCves(target))
+                .thenReturn(org.crbf.domain.model.artifact.TransitiveDepsResult.of(Set.of(), List.of()));
+        when(analyseReachabilityPort.buildCallGraph(any(), anyList())).thenReturn(new ProjectCallGraph(
+                Set.of(org.crbf.domain.model.reachability.ReachableMethod.of("fixture.Api", "used"))));
+        when(analyseReachabilityPort.analyseReachability(any(), eq(locatedCurrent), anyList()))
+                .thenReturn(List.of(VulnerabilityReachability.reachableProbable(v, Set.of())));
+        when(detectBreakingChangesPort.detect(locatedCurrent, locatedTarget)).thenReturn(
+                new org.crbf.domain.model.compatibility.CompatibilityReport(current, target,
+                        org.crbf.domain.model.compatibility.CompatibilityStatus.BINARY_INCOMPATIBLE, List.of(change)));
+        service.analyse(PROJECT_PATH, CLASSES_PATH, List.of(new DependencyPath(List.of(ROOT, current))));
+        ArgumentCaptor<List<RemediationCandidate>> candidates = ArgumentCaptor.forClass(List.class);
+        verify(optimiseRemediationPort).optimize(candidates.capture());
+        return candidates.getValue().get(0);
     }
 
     private void stubResolution(Artifact artifact, Path jarPath) {

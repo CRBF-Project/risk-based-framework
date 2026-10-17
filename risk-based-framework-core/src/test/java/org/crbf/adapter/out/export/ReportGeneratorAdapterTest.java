@@ -80,7 +80,7 @@ class ReportGeneratorAdapterTest {
         assertEquals("RECOMMENDED", remediation.path("decision").asText(), "Selected update classification");
         assertEquals(recommendedVersion, remediation.path("recommendedVersion").asText(), "Recommended target version");
         assertEquals(rationale, remediation.path("rationale").asText(), "Recommendation rationale");
-        assertEquals(expectedContextualRisk, remediation.path("riskReduction").asDouble(), tolerance, "Selected risk reduction");
+        assertEquals(expectedContextualRisk, remediation.path("potentialRiskAddressed").asDouble(), tolerance, "Selected risk reduction");
         assertEquals(expectedAdvisoryCount, finding.path("vulnerabilities").size(), "The supporting advisory must be exported once");
         JsonNode advisory = finding.path("vulnerabilities").get(0);
         assertEquals("CVE-2026-1001", advisory.path("id").asText(), "Supporting vulnerability identifier");
@@ -105,7 +105,7 @@ class ReportGeneratorAdapterTest {
         String name = "</script><script>window.injected=true</script><img src=x onerror=alert(1)>";
         RiskReport report = new RiskReport(name, base.totalDependenciesScanned(), base.totalDependencyPaths(),
                 base.scannedArtifacts(), base.findings(), base.optimisationStatus(), base.infeasibility(),
-                base.residualRisk(), base.globalGraphValidation(), base.vulnerabilityLookupFailures(), base.availableEffortBudget());
+                base.unselectedRisk(), base.globalGraphValidation(), base.vulnerabilityLookupFailures(), base.availableEffortBudget());
 
         new ReportGeneratorAdapter().exportReport(report, outputDirectory);
 
@@ -149,6 +149,60 @@ class ReportGeneratorAdapterTest {
         JsonNode exported = new ObjectMapper().readTree(outputDirectory.resolve("risk-report.json").toFile());
         assertEquals(status.name(), exported.path("optimisationStatus").asText());
         assertEquals(10, exported.path("availableEffortBudget").asDouble());
+        assertEquals(exported, embeddedData(Files.readString(outputDirectory.resolve("risk-report.html"))));
+    }
+
+    @Test
+    void shouldPreserveUnavailableEvidenceInExportedRecommendations() throws IOException {
+        Vulnerability v = org.crbf.fixture.VulnerabilityFixture.vulnerabilityWithoutEpss("CVE-2026-1001", 8);
+        RemediationCandidate base = withFix(List.of(VulnerabilityReachability.unknown(v)));
+        var validation = new org.crbf.domain.model.optimisation.UpgradePathValidation(base.artifact(), "2.0.0",
+                List.of(), List.of(), List.of(), List.of(), Optional.empty(), Optional.empty(),
+                org.crbf.domain.model.optimisation.UpgradePathStatus.UNKNOWN, Optional.empty());
+        var candidate = new RemediationCandidate(base.artifact(), base.vulnerabilities(), base.reachabilityReports(),
+                Optional.empty(), base.fixVersion(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.of(validation));
+        RemediationPlan plan = new org.crbf.adapter.out.z3.Z3RemediationAdapter(2).optimize(List.of(candidate))
+                .withGlobalValidation(GlobalGraphValidation.unavailable());
+        RiskReport report = new RiskReportAssembler().assemble(Path.of("test-project"), List.of(),
+                Set.of(candidate.artifact()), List.of(candidate), plan, List.of());
+        new ReportGeneratorAdapter().exportReport(report, outputDirectory);
+        JsonNode exported = new ObjectMapper().readTree(outputDirectory.resolve("risk-report.json").toFile());
+        JsonNode finding = exported.path("findings").get(0);
+        assertEquals("UNKNOWN", finding.path("reachability").path("status").asText());
+        assertEquals("UNKNOWN", finding.path("compatibility").path("status").asText());
+        assertEquals("UNAVAILABLE", exported.path("globalGraphValidation").path("status").asText());
+        org.junit.jupiter.api.Assertions.assertTrue(finding.path("vulnerabilities").get(0).path("epss").isNull());
+        org.junit.jupiter.api.Assertions.assertTrue(finding.path("stabilitySummary").asText().contains("Upgrade path: UNKNOWN"));
+        org.junit.jupiter.api.Assertions.assertTrue(finding.path("remediation").path("rationale").asText()
+                .contains("not verified risk reduction"));
+        assertFalse(finding.path("compatibility").has("contextuallyAdjusted"));
+        assertFalse(finding.path("remediation").has("riskReduction"));
+        assertFalse(exported.has("residualRisk"));
+        org.junit.jupiter.api.Assertions.assertTrue(exported.has("unselectedRisk"));
+    }
+
+    @Test
+    void shouldExportOriginalAndContextualCompatibilityWithEstimatedEffort() throws IOException {
+        Vulnerability v = vulnerability("CVE-2026-1001", 8, 0.2);
+        RemediationCandidate base = withFix(List.of(VulnerabilityReachability.reachableConfirmed(v, Set.of(), Set.of())));
+        var target = org.crbf.domain.model.artifact.Artifact.create("org.example", "test-library", "2.0.0",
+                org.crbf.domain.model.artifact.Scope.COMPILE);
+        var compatibility = new org.crbf.domain.model.compatibility.CompatibilityReport(base.artifact(), target,
+                org.crbf.domain.model.compatibility.CompatibilityStatus.BINARY_INCOMPATIBLE,
+                List.of("[BINARY] Method fixture.Api#removed() — METHOD_REMOVED"))
+                .contextualise(new org.crbf.domain.model.reachability.ProjectCallGraph(
+                        Set.of(org.crbf.domain.model.reachability.ReachableMethod.of("fixture.Api", "used"))));
+        var candidate = new RemediationCandidate(base.artifact(), base.vulnerabilities(), base.reachabilityReports(),
+                Optional.of(compatibility), base.fixVersion(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
+        RemediationPlan plan = new org.crbf.adapter.out.z3.Z3RemediationAdapter(1).optimize(List.of(candidate));
+        RiskReport report = new RiskReportAssembler().assemble(Path.of("test-project"), List.of(),
+                Set.of(candidate.artifact()), List.of(candidate), plan, List.of());
+        new ReportGeneratorAdapter().exportReport(report, outputDirectory);
+        JsonNode exported = new ObjectMapper().readTree(outputDirectory.resolve("risk-report.json").toFile());
+        JsonNode finding = exported.path("findings").get(0);
+        assertEquals("BINARY_INCOMPATIBLE", finding.path("compatibility").path("status").asText());
+        assertEquals("COMPATIBLE", finding.path("compatibility").path("contextualStatus").asText());
+        assertEquals(1.0, finding.path("remediation").path("effortCost").asDouble());
         assertEquals(exported, embeddedData(Files.readString(outputDirectory.resolve("risk-report.html"))));
     }
 

@@ -99,8 +99,8 @@ class Z3RemediationAdapterTest {
 
         assertTrue(plan.solvedByZ3());
         assertEquals(Set.of(first.artifact(), second.artifact()), upgradedArtifacts(plan));
-        assertEquals(1.5, plan.totalRiskReduction(), DELTA);
-        assertEquals(0.5, plan.totalResidualRisk(), DELTA);
+        assertEquals(1.5, plan.totalPotentialRiskAddressed(), DELTA);
+        assertEquals(0.5, plan.totalUnselectedRisk(), DELTA);
     }
 
     @Test
@@ -125,7 +125,7 @@ class Z3RemediationAdapterTest {
         assertEquals(List.of(), plan.upgradeRecommendations());
         assertEquals(1, plan.deferredDecisions().size());
         assertEquals(0, plan.totalEffortCost(), DELTA);
-        assertEquals(0.8, plan.totalResidualRisk(), DELTA);
+        assertEquals(0.8, plan.totalUnselectedRisk(), DELTA);
     }
 
     @Test
@@ -140,7 +140,7 @@ class Z3RemediationAdapterTest {
         assertEquals(Set.of(fixable.artifact()), upgradedArtifacts(plan));
         assertEquals(List.of(noFix.artifact()), plan.deferredDecisions().stream()
                 .map(decision -> decision.artifact()).toList());
-        assertEquals(1, plan.totalResidualRisk(), DELTA);
+        assertEquals(1, plan.totalUnselectedRisk(), DELTA);
     }
 
     @Test
@@ -182,8 +182,8 @@ class Z3RemediationAdapterTest {
         assertFalse(plan.solvedByZ3());
         assertEquals(Set.of(), upgradedArtifacts(plan));
         assertEquals(0, plan.totalEffortCost(), DELTA);
-        assertEquals(0, plan.totalRiskReduction(), DELTA);
-        assertEquals(1.95, plan.totalResidualRisk(), DELTA);
+        assertEquals(0, plan.totalPotentialRiskAddressed(), DELTA);
+        assertEquals(1.95, plan.totalUnselectedRisk(), DELTA);
     }
 
     @Test
@@ -198,7 +198,7 @@ class Z3RemediationAdapterTest {
         assertFalse(plan.solvedByZ3());
         assertEquals(Set.of(mandatory.artifact()), upgradedArtifacts(plan));
         assertEquals(4, plan.totalEffortCost(), DELTA);
-        assertEquals(0.8, plan.totalResidualRisk(), DELTA);
+        assertEquals(0.8, plan.totalUnselectedRisk(), DELTA);
     }
 
     @Test
@@ -213,7 +213,7 @@ class Z3RemediationAdapterTest {
         assertFalse(plan.solvedByZ3());
         assertEquals(List.of(noFix.artifact()), plan.deferredDecisions().stream()
                 .map(decision -> decision.artifact()).toList());
-        assertEquals(0.8, plan.totalResidualRisk(), DELTA);
+        assertEquals(0.8, plan.totalUnselectedRisk(), DELTA);
     }
 
     @Test
@@ -227,7 +227,7 @@ class Z3RemediationAdapterTest {
         assertEquals(OptimisationStatus.GREEDY_FALLBACK, plan.optimisationStatus());
         assertEquals(Set.of(mandatory.artifact(), cheap.artifact()), upgradedArtifacts(plan));
         assertEquals(3, plan.totalEffortCost(), DELTA);
-        assertEquals(0.7, plan.totalResidualRisk(), DELTA);
+        assertEquals(0.7, plan.totalUnselectedRisk(), DELTA);
     }
 
     @Test
@@ -240,7 +240,7 @@ class Z3RemediationAdapterTest {
 
         assertEquals(OptimisationStatus.INFEASIBLE, plan.optimisationStatus());
         assertEquals(Set.of(), upgradedArtifacts(plan));
-        assertEquals(1.8, plan.totalResidualRisk(), DELTA);
+        assertEquals(1.8, plan.totalUnselectedRisk(), DELTA);
     }
 
     @Test
@@ -252,7 +252,7 @@ class Z3RemediationAdapterTest {
 
         assertEquals(OptimisationStatus.INFEASIBLE, plan.optimisationStatus());
         assertEquals(Set.of(), upgradedArtifacts(plan));
-        assertEquals(1.8, plan.totalResidualRisk(), DELTA);
+        assertEquals(1.8, plan.totalUnselectedRisk(), DELTA);
     }
 
     @Test
@@ -267,6 +267,22 @@ class Z3RemediationAdapterTest {
         assertEquals(OptimisationStatus.GREEDY_FALLBACK, plan.optimisationStatus());
         assertEquals(Set.of(optional.artifact()), upgradedArtifacts(plan));
         assertEquals(1, plan.totalEffortCost(), DELTA);
+    }
+
+    @Test
+    void shouldReportPotentiallyAddressedRiskWithoutClaimingPosteriorReduction() {
+        RemediationCandidate base = candidate("partial", 8, CompatibilityStatus.COMPATIBLE);
+        var validation = new org.crbf.domain.model.optimisation.UpgradePathValidation(base.artifact(), "2.0.0",
+                List.of(vulnerability("CVE-2026-0099", 3, 0)), List.of(), List.of(), List.of(),
+                base.compatibilityReport(), Optional.of(0.0),
+                org.crbf.domain.model.optimisation.UpgradePathStatus.HAS_RISKS, Optional.empty());
+        var candidate = new RemediationCandidate(base.artifact(), base.vulnerabilities(), base.reachabilityReports(),
+                base.compatibilityReport(), base.fixVersion(), Optional.empty(), Optional.empty(), Optional.empty(),
+                Optional.of(validation));
+        RemediationPlan plan = new Z3RemediationAdapter(1, CVSS_ONLY).optimize(List.of(candidate));
+        assertEquals(0.4, plan.totalPotentialRiskAddressed(), DELTA);
+        assertTrue(plan.upgradeRecommendations().get(0).rationale().contains("not verified risk reduction"));
+        assertTrue(plan.upgradeRecommendations().get(0).rationale().contains("Upgrade path: HAS_RISKS"));
     }
 
     private static Z3RemediationAdapter failingSolver(double budget) {

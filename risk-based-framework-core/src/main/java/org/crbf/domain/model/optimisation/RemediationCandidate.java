@@ -266,7 +266,7 @@ public record RemediationCandidate(
         }
 
         CompatibilityStatus compatibility = compatibilityReport
-                .map(CompatibilityReport::status)
+                .map(CompatibilityReport::effortStatus)
                 .orElse(CompatibilityStatus.UNKNOWN);
 
         return switch (compatibility) {
@@ -324,8 +324,8 @@ public record RemediationCandidate(
             if (pathStatus == UpgradePathStatus.HAS_RISKS) {
                 summary.append(
                         String.format(
-                                " (%d new CVE(s))",
-                                validation.totalNewVulns()));
+                                " (%d target vulnerabilities; %d introduced vulnerable dependencies)",
+                                validation.fixVersionVulns().size(), validation.newTransitiveVulnerableDeps().size()));
             }
 
             validation.upgradePathSecuritySignal().ifPresent(signal -> summary.append(

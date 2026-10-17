@@ -64,7 +64,7 @@ class RiskReportAssemblerTest {
 
                 assertEquals(expected, report.findings().get(1).remediation().decision());
                 assertEquals(0, report.findings().get(1).remediation().effortCost());
-                assertEquals(0, report.findings().get(1).remediation().riskReduction());
+                assertEquals(0, report.findings().get(1).remediation().potentialRiskAddressed());
                 assertEquals(plan.infeasibility(), report.infeasibility());
         }
 
@@ -92,19 +92,19 @@ class RiskReportAssemblerTest {
                                                 Set.of(),
                                                 Set.of())));
 
-                double riskReduction = 0.5;
+                double potentialRiskAddressed = 0.5;
                 double effortCost = 1.0;
 
                 RemediationDecision decision = RemediationDecision.upgrade(
                                 candidate.artifact(),
                                 candidate.fixVersion().orElseThrow(),
-                                riskReduction,
+                                potentialRiskAddressed,
                                 effortCost,
                                 "Selected by optimiser.");
 
                 RemediationPlan plan = new RemediationPlan(
                                 List.of(decision),
-                                decision.riskReduction(),
+                                decision.potentialRiskAddressed(),
                                 0.0,
                                 decision.effortCost(),
                                 true,
@@ -139,19 +139,19 @@ class RiskReportAssemblerTest {
                                                 Set.of(),
                                                 Set.of())));
 
-                double riskReduction = 0.5;
+                double potentialRiskAddressed = 0.5;
                 double effortCost = 1.0;
 
                 RemediationDecision decision = RemediationDecision.upgrade(
                                 candidate.artifact(),
                                 candidate.fixVersion().orElseThrow(),
-                                riskReduction,
+                                potentialRiskAddressed,
                                 effortCost,
                                 "Mandatory upgrade.");
 
                 RemediationPlan plan = new RemediationPlan(
                                 List.of(decision),
-                                decision.riskReduction(),
+                                decision.potentialRiskAddressed(),
                                 0.0,
                                 decision.effortCost(),
                                 true,
@@ -202,7 +202,7 @@ class RiskReportAssemblerTest {
 
                 ArtifactFinding finding = report.findings().get(0);
 
-                assertEquals(0.0, finding.remediation().riskReduction(), TOLERANCE);
+                assertEquals(0.0, finding.remediation().potentialRiskAddressed(), TOLERANCE);
                 assertEquals(
                                 candidate.contextualRisk(),
                                 finding.contextualRisk(),

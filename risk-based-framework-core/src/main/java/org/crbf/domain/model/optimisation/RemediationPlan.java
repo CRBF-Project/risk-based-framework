@@ -12,16 +12,16 @@ import java.util.Optional;
  * its decisions retain all candidates as unmitigated risk, not a feasible plan.
  *
  * @param decisions  One {@link RemediationDecision} per vulnerable artifact.
- * @param totalRiskReduction Sum of risk scores eliminated by all recommended upgrades.
- * @param totalResidualRisk Sum of risk scores that remain after applying the plan.
+ * @param totalPotentialRiskAddressed Sum of current risk scores potentially addressed by recommended upgrades; not verified reduction.
+ * @param totalUnselectedRisk Sum of current risk scores of unselected dependencies; not post-update residual risk.
  * @param totalEffortCost Total effort units consumed by all recommended upgrades.
  * @param optimisationStatus Whether optimisation succeeded, was infeasible, or used a technical fallback.
  * @param availableEffortBudget Configured effort limit, absent for legacy plan producers.
  */
 public record RemediationPlan(
         List<RemediationDecision> decisions,
-        double totalRiskReduction,
-        double totalResidualRisk,
+        double totalPotentialRiskAddressed,
+        double totalUnselectedRisk,
         double totalEffortCost,
         OptimisationStatus optimisationStatus,
         GlobalGraphValidation globalGraphValidation,
@@ -33,29 +33,29 @@ public record RemediationPlan(
     }
 
     /** Compatibility constructor for producers that do not report a budget. */
-    public RemediationPlan(List<RemediationDecision> decisions, double totalRiskReduction,
-            double totalResidualRisk, double totalEffortCost, OptimisationStatus optimisationStatus,
+    public RemediationPlan(List<RemediationDecision> decisions, double totalPotentialRiskAddressed,
+            double totalUnselectedRisk, double totalEffortCost, OptimisationStatus optimisationStatus,
             GlobalGraphValidation globalGraphValidation, Optional<InfeasibilityDetails> infeasibility) {
-        this(decisions, totalRiskReduction, totalResidualRisk, totalEffortCost,
+        this(decisions, totalPotentialRiskAddressed, totalUnselectedRisk, totalEffortCost,
                 optimisationStatus, globalGraphValidation, infeasibility, Optional.empty());
     }
 
     public RemediationPlan withEffortBudget(double budget) {
-        return new RemediationPlan(decisions, totalRiskReduction, totalResidualRisk, totalEffortCost,
+        return new RemediationPlan(decisions, totalPotentialRiskAddressed, totalUnselectedRisk, totalEffortCost,
                 optimisationStatus, globalGraphValidation, infeasibility, Optional.of(budget));
     }
 
-    public RemediationPlan(List<RemediationDecision> decisions, double totalRiskReduction,
-            double totalResidualRisk, double totalEffortCost, OptimisationStatus optimisationStatus,
+    public RemediationPlan(List<RemediationDecision> decisions, double totalPotentialRiskAddressed,
+            double totalUnselectedRisk, double totalEffortCost, OptimisationStatus optimisationStatus,
             GlobalGraphValidation globalGraphValidation) {
-        this(decisions, totalRiskReduction, totalResidualRisk, totalEffortCost,
+        this(decisions, totalPotentialRiskAddressed, totalUnselectedRisk, totalEffortCost,
                 optimisationStatus, globalGraphValidation, Optional.empty());
     }
 
-    public RemediationPlan(List<RemediationDecision> decisions, double totalRiskReduction,
-            double totalResidualRisk, double totalEffortCost, boolean solvedByZ3,
+    public RemediationPlan(List<RemediationDecision> decisions, double totalPotentialRiskAddressed,
+            double totalUnselectedRisk, double totalEffortCost, boolean solvedByZ3,
             GlobalGraphValidation globalGraphValidation) {
-        this(decisions, totalRiskReduction, totalResidualRisk, totalEffortCost,
+        this(decisions, totalPotentialRiskAddressed, totalUnselectedRisk, totalEffortCost,
                 solvedByZ3 ? OptimisationStatus.OPTIMAL : OptimisationStatus.GREEDY_FALLBACK,
                 globalGraphValidation);
     }
@@ -71,8 +71,8 @@ public record RemediationPlan(
     public RemediationPlan withGlobalValidation(GlobalGraphValidation validation) {
         return new RemediationPlan(
                 decisions,
-                totalRiskReduction,
-                totalResidualRisk,
+                totalPotentialRiskAddressed,
+                totalUnselectedRisk,
                 totalEffortCost,
                 optimisationStatus,
                 validation,
@@ -83,7 +83,7 @@ public record RemediationPlan(
     public List<RemediationDecision> upgradeRecommendations() {
         return decisions.stream()
                 .filter(RemediationDecision::shouldUpgrade)
-                .sorted(Comparator.comparingDouble(RemediationDecision::riskReduction).reversed())
+                .sorted(Comparator.comparingDouble(RemediationDecision::potentialRiskAddressed).reversed())
                 .toList();
     }
 

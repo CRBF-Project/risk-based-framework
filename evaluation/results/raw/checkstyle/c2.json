@@ -1,0 +1,1304 @@
+{
+  "results": [
+    {
+      "source": {
+        "path": "target/checkstyle-10.12.5-all.jar",
+        "type": "artifact"
+      },
+      "packages": [
+        {
+          "package": {
+            "name": "com.google.code.findbugs:jsr305",
+            "version": "3.0.2",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/com.google.code.findbugs/jsr305@3.0.2"
+          }
+        },
+        {
+          "package": {
+            "name": "com.google.collections:google-collections",
+            "version": "1.0",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/com.google.collections/google-collections@1.0"
+          }
+        },
+        {
+          "package": {
+            "name": "com.google.errorprone:error_prone_annotations",
+            "version": "2.18.0",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/com.google.errorprone/error_prone_annotations@2.18.0"
+          }
+        },
+        {
+          "package": {
+            "name": "com.google.guava:failureaccess",
+            "version": "1.0.1",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/com.google.guava/failureaccess@1.0.1"
+          }
+        },
+        {
+          "package": {
+            "name": "com.google.guava:guava",
+            "version": "32.0.1-jre",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/com.google.guava/guava@32.0.1-jre"
+          }
+        },
+        {
+          "package": {
+            "name": "com.google.guava:listenablefuture",
+            "version": "9999.0-empty-to-avoid-conflict-with-guava",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/com.google.guava/listenablefuture@9999.0-empty-to-avoid-conflict-with-guava"
+          }
+        },
+        {
+          "package": {
+            "name": "com.google.j2objc:j2objc-annotations",
+            "version": "2.8",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/com.google.j2objc/j2objc-annotations@2.8"
+          }
+        },
+        {
+          "package": {
+            "name": "com.puppycrawl.tools:checkstyle",
+            "version": "10.12.5",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/com.puppycrawl.tools/checkstyle@10.12.5"
+          }
+        },
+        {
+          "package": {
+            "name": "commons-beanutils:commons-beanutils",
+            "version": "1.9.4",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/commons-beanutils/commons-beanutils@1.9.4"
+          },
+          "groups": [
+            {
+              "ids": [
+                "GHSA-wxr5-93ph-8wr9"
+              ],
+              "aliases": [
+                "CVE-2025-48734",
+                "GHSA-wxr5-93ph-8wr9"
+              ],
+              "experimental_analysis": {
+                "GHSA-wxr5-93ph-8wr9": {
+                  "called": true,
+                  "unimportant": false
+                }
+              },
+              "max_severity": "8.8"
+            }
+          ],
+          "vulnerabilities": [
+            {
+              "affected": [
+                {
+                  "database_specific": {
+                    "last_known_affected_version_range": "<= 1.10.1",
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2025/05/GHSA-wxr5-93ph-8wr9/GHSA-wxr5-93ph-8wr9.json"
+                  },
+                  "package": {
+                    "ecosystem": "Maven",
+                    "name": "commons-beanutils:commons-beanutils",
+                    "purl": "pkg:maven/commons-beanutils/commons-beanutils"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "1.0"
+                        },
+                        {
+                          "fixed": "1.11.0"
+                        }
+                      ],
+                      "type": "ECOSYSTEM"
+                    }
+                  ],
+                  "versions": [
+                    "1.0",
+                    "1.10.0",
+                    "1.10.1",
+                    "1.2",
+                    "1.3",
+                    "1.4",
+                    "1.4.1",
+                    "1.5",
+                    "1.6",
+                    "1.6.1",
+                    "1.7.0",
+                    "1.8.0",
+                    "1.8.0-BETA",
+                    "1.8.1",
+                    "1.8.2",
+                    "1.8.3",
+                    "1.9.0",
+                    "1.9.1",
+                    "1.9.2",
+                    "1.9.3",
+                    "1.9.4"
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2025/05/GHSA-wxr5-93ph-8wr9/GHSA-wxr5-93ph-8wr9.json"
+                  },
+                  "package": {
+                    "ecosystem": "Maven",
+                    "name": "org.apache.commons:commons-beanutils2",
+                    "purl": "pkg:maven/org.apache.commons/commons-beanutils2"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "2.0.0-M1"
+                        },
+                        {
+                          "fixed": "2.0.0-M2"
+                        }
+                      ],
+                      "type": "ECOSYSTEM"
+                    }
+                  ],
+                  "versions": [
+                    "2.0.0-M1"
+                  ]
+                }
+              ],
+              "aliases": [
+                "CVE-2025-48734"
+              ],
+              "database_specific": {
+                "cwe_ids": [
+                  "CWE-284"
+                ],
+                "github_reviewed": true,
+                "github_reviewed_at": "2025-05-28T17:37:18Z",
+                "nvd_published_at": "2025-05-28T14:15:34Z",
+                "severity": "HIGH"
+              },
+              "details": "Improper Access Control vulnerability in Apache Commons.\n\n\n\nA special BeanIntrospector class was added in version 1.9.2. This can be used to stop attackers from using the declared class property of Java enum objects to get access to the classloader. However this protection was not enabled by default. PropertyUtilsBean (and consequently BeanUtilsBean) now disallows declared class level property access by default.\n\n\n\n\n\nReleases 1.11.0 and 2.0.0-M2 address a potential security issue when accessing enum properties in an uncontrolled way. If an application using Commons BeanUtils passes property paths from an external source directly to the getProperty() method of PropertyUtilsBean, an attacker can access the enum\u2019s class loader via the \u201cdeclaredClass\u201d property available on all Java \u201cenum\u201d objects. Accessing the enum\u2019s \u201cdeclaredClass\u201d allows remote attackers to access the ClassLoader and execute arbitrary code. The same issue exists with PropertyUtilsBean.getNestedProperty().\nStarting in versions 1.11.0 and 2.0.0-M2 a special BeanIntrospector suppresses the \u201cdeclaredClass\u201d property. Note that this new BeanIntrospector is enabled by default, but you can disable it to regain the old behavior; see section 2.5 of the user's guide and the unit tests.\n\nThis issue affects Apache Commons BeanUtils 1.x before 1.11.0, and 2.x before 2.0.0-M2.Users of the artifact commons-beanutils:commons-beanutils\n\n 1.x are recommended to upgrade to version 1.11.0, which fixes the issue.\n\n\nUsers of the artifact org.apache.commons:commons-beanutils2\n\n 2.x are recommended to upgrade to version 2.0.0-M2, which fixes the issue.",
+              "id": "GHSA-wxr5-93ph-8wr9",
+              "modified": "2026-09-10T03:50:24.755642299Z",
+              "published": "2025-05-28T15:34:34Z",
+              "references": [
+                {
+                  "type": "ADVISORY",
+                  "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-48734"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/apache/commons-beanutils/commit/bd20740da25b69552ddef8523beec0837297eaf9"
+                },
+                {
+                  "type": "PACKAGE",
+                  "url": "https://github.com/apache/commons-beanutils"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://lists.apache.org/thread/s0hb3jkfj5f3ryx6c57zqtfohb0of1g9"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://lists.debian.org/debian-lts-announce/2025/06/msg00027.html"
+                },
+                {
+                  "type": "WEB",
+                  "url": "http://www.openwall.com/lists/oss-security/2025/05/28/6"
+                }
+              ],
+              "schema_version": "1.9.0",
+              "severity": [
+                {
+                  "score": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+                  "type": "CVSS_V3"
+                }
+              ],
+              "summary": "Apache Commons Improper Access Control vulnerability"
+            }
+          ]
+        },
+        {
+          "package": {
+            "name": "commons-codec:commons-codec",
+            "version": "1.16.0",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/commons-codec/commons-codec@1.16.0"
+          }
+        },
+        {
+          "package": {
+            "name": "commons-collections:commons-collections",
+            "version": "3.2.2",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/commons-collections/commons-collections@3.2.2"
+          }
+        },
+        {
+          "package": {
+            "name": "commons-logging:commons-logging",
+            "version": "1.2",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/commons-logging/commons-logging@1.2"
+          }
+        },
+        {
+          "package": {
+            "name": "org.antlr:antlr4-runtime",
+            "version": "4.13.1",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/org.antlr/antlr4-runtime@4.13.1"
+          }
+        },
+        {
+          "package": {
+            "name": "org.apache.commons:commons-lang3",
+            "version": "3.8.1",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/org.apache.commons/commons-lang3@3.8.1"
+          },
+          "groups": [
+            {
+              "ids": [
+                "GHSA-j288-q9x7-2f5v"
+              ],
+              "aliases": [
+                "CVE-2025-48924",
+                "GHSA-j288-q9x7-2f5v"
+              ],
+              "experimental_analysis": {
+                "GHSA-j288-q9x7-2f5v": {
+                  "called": true,
+                  "unimportant": false
+                }
+              },
+              "max_severity": "6.5"
+            }
+          ],
+          "vulnerabilities": [
+            {
+              "affected": [
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2025/07/GHSA-j288-q9x7-2f5v/GHSA-j288-q9x7-2f5v.json"
+                  },
+                  "package": {
+                    "ecosystem": "Maven",
+                    "name": "org.apache.commons:commons-lang3",
+                    "purl": "pkg:maven/org.apache.commons/commons-lang3"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "3.0"
+                        },
+                        {
+                          "fixed": "3.18.0"
+                        }
+                      ],
+                      "type": "ECOSYSTEM"
+                    }
+                  ],
+                  "versions": [
+                    "3.0",
+                    "3.0.1",
+                    "3.1",
+                    "3.10",
+                    "3.11",
+                    "3.12.0",
+                    "3.13.0",
+                    "3.14.0",
+                    "3.15.0",
+                    "3.16.0",
+                    "3.17.0",
+                    "3.2",
+                    "3.2.1",
+                    "3.3",
+                    "3.3.1",
+                    "3.3.2",
+                    "3.4",
+                    "3.5",
+                    "3.6",
+                    "3.7",
+                    "3.8",
+                    "3.8.1",
+                    "3.9"
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2025/07/GHSA-j288-q9x7-2f5v/GHSA-j288-q9x7-2f5v.json"
+                  },
+                  "package": {
+                    "ecosystem": "Maven",
+                    "name": "commons-lang:commons-lang",
+                    "purl": "pkg:maven/commons-lang/commons-lang"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "2.0"
+                        },
+                        {
+                          "last_affected": "2.6"
+                        }
+                      ],
+                      "type": "ECOSYSTEM"
+                    }
+                  ],
+                  "versions": [
+                    "2.0",
+                    "2.1",
+                    "2.2",
+                    "2.3",
+                    "2.4",
+                    "2.5",
+                    "2.6"
+                  ]
+                }
+              ],
+              "aliases": [
+                "CVE-2025-48924"
+              ],
+              "database_specific": {
+                "cwe_ids": [
+                  "CWE-674"
+                ],
+                "github_reviewed": true,
+                "github_reviewed_at": "2025-07-12T00:48:03Z",
+                "nvd_published_at": "2025-07-11T15:15:24Z",
+                "severity": "MODERATE"
+              },
+              "details": "Uncontrolled Recursion vulnerability in Apache Commons Lang.\n\nThis issue affects Apache Commons Lang: Starting with\u00a0commons-lang:commons-lang\u00a02.0 to 2.6, and, from org.apache.commons:commons-lang3 3.0 before\u00a03.18.0.\n\nThe methods ClassUtils.getClass(...) can throw\u00a0StackOverflowError on very long inputs. Because an Error is usually not handled by applications and libraries, a StackOverflowError could\u00a0cause an application to stop.\n\nUsers are recommended to upgrade to version 3.18.0, which fixes the issue.",
+              "id": "GHSA-j288-q9x7-2f5v",
+              "modified": "2026-09-10T03:50:26.176912270Z",
+              "published": "2025-07-11T15:31:37Z",
+              "references": [
+                {
+                  "type": "ADVISORY",
+                  "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-48924"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/apache/commons-lang/commit/b424803abdb2bec818e4fbcb251ce031c22aca53"
+                },
+                {
+                  "type": "PACKAGE",
+                  "url": "https://github.com/apache/commons-lang"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://lists.apache.org/thread/bgv0lpswokgol11tloxnjfzdl7yrc1g1"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://lists.debian.org/debian-lts-announce/2025/08/msg00000.html"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://lists.debian.org/debian-lts-announce/2025/08/msg00026.html"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://lists.debian.org/debian-lts-announce/2025/09/msg00032.html"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://lists.debian.org/debian-lts-announce/2025/09/msg00036.html"
+                },
+                {
+                  "type": "WEB",
+                  "url": "http://www.openwall.com/lists/oss-security/2025/07/11/1"
+                }
+              ],
+              "schema_version": "1.9.0",
+              "severity": [
+                {
+                  "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:N",
+                  "type": "CVSS_V3"
+                }
+              ],
+              "summary": "Apache Commons Lang is vulnerable to Uncontrolled Recursion when processing long inputs"
+            }
+          ]
+        },
+        {
+          "package": {
+            "name": "org.apache.commons:commons-text",
+            "version": "1.3",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/org.apache.commons/commons-text@1.3"
+          }
+        },
+        {
+          "package": {
+            "name": "org.apache.httpcomponents.client5:httpclient5",
+            "version": "5.1.3",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/org.apache.httpcomponents.client5/httpclient5@5.1.3"
+          },
+          "groups": [
+            {
+              "ids": [
+                "GHSA-hjcp-jmpx-g3qm"
+              ],
+              "aliases": [
+                "CVE-2026-64607",
+                "GHSA-hjcp-jmpx-g3qm"
+              ],
+              "experimental_analysis": {
+                "GHSA-hjcp-jmpx-g3qm": {
+                  "called": true,
+                  "unimportant": false
+                }
+              },
+              "max_severity": "5.3"
+            }
+          ],
+          "vulnerabilities": [
+            {
+              "affected": [
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-hjcp-jmpx-g3qm/GHSA-hjcp-jmpx-g3qm.json"
+                  },
+                  "package": {
+                    "ecosystem": "Maven",
+                    "name": "org.apache.httpcomponents.client5:httpclient5",
+                    "purl": "pkg:maven/org.apache.httpcomponents.client5/httpclient5"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "5.0-alpha1"
+                        },
+                        {
+                          "fixed": "5.6.3"
+                        }
+                      ],
+                      "type": "ECOSYSTEM"
+                    }
+                  ],
+                  "versions": [
+                    "5.0",
+                    "5.0-alpha1",
+                    "5.0-alpha2",
+                    "5.0-alpha3",
+                    "5.0-beta1",
+                    "5.0-beta2",
+                    "5.0-beta3",
+                    "5.0-beta4",
+                    "5.0-beta5",
+                    "5.0-beta6",
+                    "5.0-beta7",
+                    "5.0.1",
+                    "5.0.2",
+                    "5.0.3",
+                    "5.0.4",
+                    "5.1",
+                    "5.1-beta1",
+                    "5.1.1",
+                    "5.1.2",
+                    "5.1.3",
+                    "5.1.4",
+                    "5.2",
+                    "5.2-alpha1",
+                    "5.2-beta1",
+                    "5.2.1",
+                    "5.2.2",
+                    "5.2.3",
+                    "5.3",
+                    "5.3-alpha1",
+                    "5.3.1",
+                    "5.4",
+                    "5.4-alpha1",
+                    "5.4-alpha2",
+                    "5.4-beta1",
+                    "5.4.1",
+                    "5.4.2",
+                    "5.4.3",
+                    "5.4.4",
+                    "5.5",
+                    "5.5-alpha1",
+                    "5.5.1",
+                    "5.5.2",
+                    "5.6",
+                    "5.6-alpha1",
+                    "5.6.1",
+                    "5.6.2"
+                  ]
+                }
+              ],
+              "aliases": [
+                "CVE-2026-64607"
+              ],
+              "database_specific": {
+                "cwe_ids": [
+                  "CWE-772"
+                ],
+                "github_reviewed": true,
+                "github_reviewed_at": "2026-08-13T18:40:18Z",
+                "nvd_published_at": "2026-07-31T11:17:11Z",
+                "severity": "MODERATE"
+              },
+              "details": "HttpClient based on the classic i/o model fails to correctly release the underlying connection back to the connection manager if it encounters an invalid or unsupported `Content-Encoding` header value in the response message.\u00a0Please note this defect does not affect HttpClient based on the async i/o model.\n\nThis issue affects Apache HttpComponents Client: from 5.0-alpha1 through 5.6.2.",
+              "id": "GHSA-hjcp-jmpx-g3qm",
+              "modified": "2026-09-10T03:50:12.358752934Z",
+              "published": "2026-07-31T12:30:30Z",
+              "references": [
+                {
+                  "type": "ADVISORY",
+                  "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-64607"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/apache/httpcomponents-client/commit/55733f4121f7ba26ddf04fe12739d9c15962cb94"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/apache/httpcomponents-client/commit/ebac9512f555c4a355cad3f59ef2db69b597cc97"
+                },
+                {
+                  "type": "PACKAGE",
+                  "url": "https://github.com/apache/httpcomponents-client"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/apache/httpcomponents-client/releases/tag/rel/v5.6.3"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/apache/httpcomponents-client/releases/tag/rel/v5.7-alpha1"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://lists.apache.org/thread/qqfzo3fqcdk4l5496vz95ppvl4ty511q"
+                },
+                {
+                  "type": "WEB",
+                  "url": "http://www.openwall.com/lists/oss-security/2026/08/13/5"
+                }
+              ],
+              "schema_version": "1.9.0",
+              "severity": [
+                {
+                  "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
+                  "type": "CVSS_V3"
+                }
+              ],
+              "summary": "Apache HttpComponents Client: Connection Leak on Content-Encoding Decode Error Leads to Pool Exhaustion DoS"
+            }
+          ]
+        },
+        {
+          "package": {
+            "name": "org.apache.httpcomponents.core5:httpcore5",
+            "version": "5.1.3",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/org.apache.httpcomponents.core5/httpcore5@5.1.3"
+          },
+          "groups": [
+            {
+              "ids": [
+                "GHSA-hf6x-8p5f-cgmf"
+              ],
+              "aliases": [
+                "CVE-2026-54399",
+                "GHSA-hf6x-8p5f-cgmf"
+              ],
+              "experimental_analysis": {
+                "GHSA-hf6x-8p5f-cgmf": {
+                  "called": true,
+                  "unimportant": false
+                }
+              },
+              "max_severity": "7.5"
+            }
+          ],
+          "vulnerabilities": [
+            {
+              "affected": [
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-hf6x-8p5f-cgmf/GHSA-hf6x-8p5f-cgmf.json"
+                  },
+                  "package": {
+                    "ecosystem": "Maven",
+                    "name": "org.apache.httpcomponents.core5:httpcore5",
+                    "purl": "pkg:maven/org.apache.httpcomponents.core5/httpcore5"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "0"
+                        },
+                        {
+                          "fixed": "5.4.3"
+                        }
+                      ],
+                      "type": "ECOSYSTEM"
+                    }
+                  ],
+                  "versions": [
+                    "5.0",
+                    "5.0-alpha1",
+                    "5.0-alpha2",
+                    "5.0-alpha3",
+                    "5.0-alpha4",
+                    "5.0-beta1",
+                    "5.0-beta10",
+                    "5.0-beta11",
+                    "5.0-beta2",
+                    "5.0-beta3",
+                    "5.0-beta4",
+                    "5.0-beta5",
+                    "5.0-beta6",
+                    "5.0-beta7",
+                    "5.0-beta8",
+                    "5.0-beta9",
+                    "5.0.1",
+                    "5.0.2",
+                    "5.0.3",
+                    "5.0.4",
+                    "5.1",
+                    "5.1-beta1",
+                    "5.1-beta2",
+                    "5.1-beta3",
+                    "5.1.1",
+                    "5.1.2",
+                    "5.1.3",
+                    "5.1.4",
+                    "5.1.5",
+                    "5.2",
+                    "5.2-alpha1",
+                    "5.2-alpha2",
+                    "5.2-beta1",
+                    "5.2-beta2",
+                    "5.2.1",
+                    "5.2.2",
+                    "5.2.3",
+                    "5.2.4",
+                    "5.2.5",
+                    "5.3",
+                    "5.3-alpha1",
+                    "5.3-alpha2",
+                    "5.3-beta1",
+                    "5.3.1",
+                    "5.3.2",
+                    "5.3.3",
+                    "5.3.4",
+                    "5.3.5",
+                    "5.3.6",
+                    "5.4",
+                    "5.4-alpha1",
+                    "5.4.1",
+                    "5.4.2"
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-hf6x-8p5f-cgmf/GHSA-hf6x-8p5f-cgmf.json"
+                  },
+                  "package": {
+                    "ecosystem": "Maven",
+                    "name": "org.apache.httpcomponents.core5:httpcore5",
+                    "purl": "pkg:maven/org.apache.httpcomponents.core5/httpcore5"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "5.5-alpha1"
+                        },
+                        {
+                          "fixed": "5.5-beta2"
+                        }
+                      ],
+                      "type": "ECOSYSTEM"
+                    }
+                  ],
+                  "versions": [
+                    "5.5-alpha1",
+                    "5.5-beta1"
+                  ]
+                }
+              ],
+              "aliases": [
+                "CVE-2026-54399"
+              ],
+              "database_specific": {
+                "cwe_ids": [
+                  "CWE-400"
+                ],
+                "github_reviewed": true,
+                "github_reviewed_at": "2026-08-12T19:24:45Z",
+                "nvd_published_at": "2026-07-01T17:16:36Z",
+                "severity": "HIGH"
+              },
+              "details": "Uncontrolled Resource Consumption vulnerability in the HTTP/1.1 message parser\u00a0in Apache HttpComponents Core (5.4.2 and earlier, 5.5-beta1 and earlier) allows\u00a0a remote attacker to cause a denial of service through memory exhaustion by sending messages with excessive number of headers / excessive header length",
+              "id": "GHSA-hf6x-8p5f-cgmf",
+              "modified": "2026-09-10T03:50:52.486045504Z",
+              "published": "2026-07-01T18:31:55Z",
+              "references": [
+                {
+                  "type": "ADVISORY",
+                  "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-54399"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/apache/httpcomponents-core/commit/d96a00fec9b2e19f8005e35681df5f6cd6e21a9e"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/apache/httpcomponents-core/commit/fdc53a32fe0fccf098cc67e71cd125e447c759ed"
+                },
+                {
+                  "type": "PACKAGE",
+                  "url": "https://github.com/apache/httpcomponents-core"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://lists.apache.org/thread/zmxh1pl2zohov5ntdh4lt85gfrlchgpy"
+                },
+                {
+                  "type": "WEB",
+                  "url": "http://www.openwall.com/lists/oss-security/2026/07/01/4"
+                }
+              ],
+              "schema_version": "1.9.0",
+              "severity": [
+                {
+                  "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                  "type": "CVSS_V3"
+                }
+              ],
+              "summary": "Apache HttpComponents Core HTTP/1 header parsing can cause memory-exhaustion denial of service"
+            }
+          ]
+        },
+        {
+          "package": {
+            "name": "org.apache.httpcomponents.core5:httpcore5-h2",
+            "version": "5.1.3",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/org.apache.httpcomponents.core5/httpcore5-h2@5.1.3"
+          },
+          "groups": [
+            {
+              "ids": [
+                "GHSA-v3jc-474w-2wm6"
+              ],
+              "aliases": [
+                "CVE-2026-54428",
+                "GHSA-v3jc-474w-2wm6"
+              ],
+              "experimental_analysis": {
+                "GHSA-v3jc-474w-2wm6": {
+                  "called": false,
+                  "unimportant": false
+                }
+              },
+              "max_severity": "7.5"
+            }
+          ],
+          "vulnerabilities": [
+            {
+              "affected": [
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-v3jc-474w-2wm6/GHSA-v3jc-474w-2wm6.json"
+                  },
+                  "package": {
+                    "ecosystem": "Maven",
+                    "name": "org.apache.httpcomponents.core5:httpcore5-h2",
+                    "purl": "pkg:maven/org.apache.httpcomponents.core5/httpcore5-h2"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "0"
+                        },
+                        {
+                          "fixed": "5.4.3"
+                        }
+                      ],
+                      "type": "ECOSYSTEM"
+                    }
+                  ],
+                  "versions": [
+                    "5.0",
+                    "5.0-alpha2",
+                    "5.0-alpha3",
+                    "5.0-alpha4",
+                    "5.0-beta1",
+                    "5.0-beta10",
+                    "5.0-beta11",
+                    "5.0-beta2",
+                    "5.0-beta3",
+                    "5.0-beta4",
+                    "5.0-beta5",
+                    "5.0-beta6",
+                    "5.0-beta7",
+                    "5.0-beta8",
+                    "5.0-beta9",
+                    "5.0.1",
+                    "5.0.2",
+                    "5.0.3",
+                    "5.0.4",
+                    "5.1",
+                    "5.1-beta1",
+                    "5.1-beta2",
+                    "5.1-beta3",
+                    "5.1.1",
+                    "5.1.2",
+                    "5.1.3",
+                    "5.1.4",
+                    "5.1.5",
+                    "5.2",
+                    "5.2-alpha1",
+                    "5.2-alpha2",
+                    "5.2-beta1",
+                    "5.2-beta2",
+                    "5.2.1",
+                    "5.2.2",
+                    "5.2.3",
+                    "5.2.4",
+                    "5.2.5",
+                    "5.3",
+                    "5.3-alpha1",
+                    "5.3-alpha2",
+                    "5.3-beta1",
+                    "5.3.1",
+                    "5.3.2",
+                    "5.3.3",
+                    "5.3.4",
+                    "5.3.5",
+                    "5.3.6",
+                    "5.4",
+                    "5.4-alpha1",
+                    "5.4.1",
+                    "5.4.2"
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/07/GHSA-v3jc-474w-2wm6/GHSA-v3jc-474w-2wm6.json"
+                  },
+                  "package": {
+                    "ecosystem": "Maven",
+                    "name": "org.apache.httpcomponents.core5:httpcore5-h2",
+                    "purl": "pkg:maven/org.apache.httpcomponents.core5/httpcore5-h2"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "5.5-alpha1"
+                        },
+                        {
+                          "fixed": "5.5-beta2"
+                        }
+                      ],
+                      "type": "ECOSYSTEM"
+                    }
+                  ],
+                  "versions": [
+                    "5.5-alpha1",
+                    "5.5-beta1"
+                  ]
+                }
+              ],
+              "aliases": [
+                "CVE-2026-54428"
+              ],
+              "database_specific": {
+                "cwe_ids": [
+                  "CWE-400"
+                ],
+                "github_reviewed": true,
+                "github_reviewed_at": "2026-08-13T18:27:16Z",
+                "nvd_published_at": "2026-07-01T18:16:34Z",
+                "severity": "HIGH"
+              },
+              "details": "Allocation of resources without limits or throttling in the HTTP/2 HPACK decoder in Apache HttpComponents Core (5.4.2 and earlier, 5.5-beta1 and earlier) allows an remote attacker to cause a denial of service through memory exhaustion by sending oversized compressed header blocks before the HTTP/2 SETTINGS acknowledgement causes the configured header list size limit to be applied.",
+              "id": "GHSA-v3jc-474w-2wm6",
+              "modified": "2026-09-10T03:51:12.247227504Z",
+              "published": "2026-07-01T18:31:56Z",
+              "references": [
+                {
+                  "type": "ADVISORY",
+                  "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-54428"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/apache/httpcomponents-core/commit/1ea1239bbbe3442a8382a87279c0a8119a7e358e"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/apache/httpcomponents-core/commit/cc30ee058a7b10cbf4ad3dd6270ab6d1f6a74c49"
+                },
+                {
+                  "type": "PACKAGE",
+                  "url": "https://github.com/apache/httpcomponents-core"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://lists.apache.org/thread/5zjp8vczvxq19pw2rvhs21q446bhl0sd"
+                },
+                {
+                  "type": "WEB",
+                  "url": "http://www.openwall.com/lists/oss-security/2026/07/01/3"
+                }
+              ],
+              "schema_version": "1.9.0",
+              "severity": [
+                {
+                  "score": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
+                  "type": "CVSS_V3"
+                }
+              ],
+              "summary": "Apache HttpComponents Core: HPackDecoder Unlimited Header List Size Before SETTINGS ACK"
+            }
+          ]
+        },
+        {
+          "package": {
+            "name": "org.apache.httpcomponents:httpclient",
+            "version": "4.5.13",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/org.apache.httpcomponents/httpclient@4.5.13"
+          }
+        },
+        {
+          "package": {
+            "name": "org.apache.httpcomponents:httpcore",
+            "version": "4.4.14",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/org.apache.httpcomponents/httpcore@4.4.14"
+          }
+        },
+        {
+          "package": {
+            "name": "org.apache.maven.doxia:doxia-core",
+            "version": "1.12.0",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/org.apache.maven.doxia/doxia-core@1.12.0"
+          }
+        },
+        {
+          "package": {
+            "name": "org.apache.maven.doxia:doxia-logging-api",
+            "version": "1.12.0",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/org.apache.maven.doxia/doxia-logging-api@1.12.0"
+          }
+        },
+        {
+          "package": {
+            "name": "org.apache.maven.doxia:doxia-module-xdoc",
+            "version": "1.12.0",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/org.apache.maven.doxia/doxia-module-xdoc@1.12.0"
+          }
+        },
+        {
+          "package": {
+            "name": "org.apache.maven.doxia:doxia-sink-api",
+            "version": "1.12.0",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/org.apache.maven.doxia/doxia-sink-api@1.12.0"
+          }
+        },
+        {
+          "package": {
+            "name": "org.apache.xbean:xbean-reflect",
+            "version": "3.7",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/org.apache.xbean/xbean-reflect@3.7"
+          }
+        },
+        {
+          "package": {
+            "name": "org.codehaus.plexus:plexus-classworlds",
+            "version": "2.6.0",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/org.codehaus.plexus/plexus-classworlds@2.6.0"
+          }
+        },
+        {
+          "package": {
+            "name": "org.codehaus.plexus:plexus-component-annotations",
+            "version": "2.1.0",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/org.codehaus.plexus/plexus-component-annotations@2.1.0"
+          }
+        },
+        {
+          "package": {
+            "name": "org.codehaus.plexus:plexus-container-default",
+            "version": "2.1.0",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/org.codehaus.plexus/plexus-container-default@2.1.0"
+          }
+        },
+        {
+          "package": {
+            "name": "org.codehaus.plexus:plexus-utils",
+            "version": "3.3.0",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/org.codehaus.plexus/plexus-utils@3.3.0"
+          },
+          "groups": [
+            {
+              "ids": [
+                "GHSA-6fmv-xxpf-w3cw"
+              ],
+              "aliases": [
+                "CVE-2025-67030",
+                "GHSA-6fmv-xxpf-w3cw"
+              ],
+              "experimental_analysis": {
+                "GHSA-6fmv-xxpf-w3cw": {
+                  "called": true,
+                  "unimportant": false
+                }
+              },
+              "max_severity": ""
+            }
+          ],
+          "vulnerabilities": [
+            {
+              "affected": [
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/03/GHSA-6fmv-xxpf-w3cw/GHSA-6fmv-xxpf-w3cw.json"
+                  },
+                  "package": {
+                    "ecosystem": "Maven",
+                    "name": "org.codehaus.plexus:plexus-utils",
+                    "purl": "pkg:maven/org.codehaus.plexus/plexus-utils"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "4.0.0"
+                        },
+                        {
+                          "fixed": "4.0.3"
+                        }
+                      ],
+                      "type": "ECOSYSTEM"
+                    }
+                  ],
+                  "versions": [
+                    "4.0.0",
+                    "4.0.1",
+                    "4.0.2"
+                  ]
+                },
+                {
+                  "database_specific": {
+                    "source": "https://github.com/github/advisory-database/blob/main/advisories/github-reviewed/2026/03/GHSA-6fmv-xxpf-w3cw/GHSA-6fmv-xxpf-w3cw.json"
+                  },
+                  "package": {
+                    "ecosystem": "Maven",
+                    "name": "org.codehaus.plexus:plexus-utils",
+                    "purl": "pkg:maven/org.codehaus.plexus/plexus-utils"
+                  },
+                  "ranges": [
+                    {
+                      "events": [
+                        {
+                          "introduced": "0"
+                        },
+                        {
+                          "fixed": "3.6.1"
+                        }
+                      ],
+                      "type": "ECOSYSTEM"
+                    }
+                  ],
+                  "versions": [
+                    "1.0.4",
+                    "1.0.5",
+                    "1.1",
+                    "1.2",
+                    "1.3",
+                    "1.4",
+                    "1.4-alpha-1",
+                    "1.4.1",
+                    "1.4.2",
+                    "1.4.3",
+                    "1.4.4",
+                    "1.4.5",
+                    "1.4.6",
+                    "1.4.7",
+                    "1.4.8",
+                    "1.4.9",
+                    "1.5",
+                    "1.5.1",
+                    "1.5.10",
+                    "1.5.11",
+                    "1.5.12",
+                    "1.5.13",
+                    "1.5.14",
+                    "1.5.15",
+                    "1.5.2",
+                    "1.5.3",
+                    "1.5.4",
+                    "1.5.5",
+                    "1.5.6",
+                    "1.5.7",
+                    "1.5.8",
+                    "1.5.9",
+                    "2.0.0",
+                    "2.0.1",
+                    "2.0.2",
+                    "2.0.3",
+                    "2.0.4",
+                    "2.0.5",
+                    "2.0.6",
+                    "2.0.7",
+                    "2.1",
+                    "3.0",
+                    "3.0.1",
+                    "3.0.10",
+                    "3.0.11",
+                    "3.0.12",
+                    "3.0.13",
+                    "3.0.14",
+                    "3.0.15",
+                    "3.0.16",
+                    "3.0.17",
+                    "3.0.18",
+                    "3.0.19",
+                    "3.0.2",
+                    "3.0.20",
+                    "3.0.21",
+                    "3.0.22",
+                    "3.0.23",
+                    "3.0.24",
+                    "3.0.3",
+                    "3.0.4",
+                    "3.0.5",
+                    "3.0.6",
+                    "3.0.7",
+                    "3.0.8",
+                    "3.0.9",
+                    "3.1.0",
+                    "3.1.1",
+                    "3.2.0",
+                    "3.2.1",
+                    "3.3.0",
+                    "3.3.1",
+                    "3.4.0",
+                    "3.4.1",
+                    "3.4.2",
+                    "3.5.0",
+                    "3.5.1",
+                    "3.6.0"
+                  ]
+                }
+              ],
+              "aliases": [
+                "CVE-2025-67030"
+              ],
+              "database_specific": {
+                "cwe_ids": [
+                  "CWE-22"
+                ],
+                "github_reviewed": true,
+                "github_reviewed_at": "2026-03-27T19:40:25Z",
+                "nvd_published_at": "2026-03-25T18:16:25Z",
+                "severity": "HIGH"
+              },
+              "details": "Directory Traversal vulnerability in the extractFile method of org.codehaus.plexus.util.Expand in plexus-utils before 6d780b3378829318ba5c2d29547e0012d5b29642. This allows an attacker to execute arbitrary code",
+              "id": "GHSA-6fmv-xxpf-w3cw",
+              "modified": "2026-09-10T03:50:37.828087615Z",
+              "published": "2026-03-25T18:31:55Z",
+              "references": [
+                {
+                  "type": "ADVISORY",
+                  "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-67030"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/codehaus-plexus/plexus-utils/issues/294"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/codehaus-plexus/plexus-utils/pull/295"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/codehaus-plexus/plexus-utils/pull/296"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/codehaus-plexus/plexus-utils/commit/6d780b3378829318ba5c2d29547e0012d5b29642"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://gist.github.com/weaver4VD/3216dac645220f8c9b488362f61241ec"
+                },
+                {
+                  "type": "PACKAGE",
+                  "url": "https://github.com/codehaus-plexus/plexus-utils"
+                },
+                {
+                  "type": "WEB",
+                  "url": "https://github.com/codehaus-plexus/plexus-utils/releases/tag/plexus-utils-4.0.3"
+                }
+              ],
+              "schema_version": "1.9.0",
+              "summary": "Plexus-Utils has a Directory Traversal vulnerability in its extractFile method "
+            }
+          ]
+        },
+        {
+          "package": {
+            "name": "org.javassist:javassist",
+            "version": "3.28.0-GA",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/org.javassist/javassist@3.28.0-GA"
+          }
+        },
+        {
+          "package": {
+            "name": "org.reflections:reflections",
+            "version": "0.10.2",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/org.reflections/reflections@0.10.2"
+          }
+        },
+        {
+          "package": {
+            "name": "org.slf4j:slf4j-api",
+            "version": "1.7.32",
+            "ecosystem": "Maven",
+            "purl": "pkg:maven/org.slf4j/slf4j-api@1.7.32"
+          }
+        }
+      ]
+    }
+  ],
+  "experimental_config": {
+    "licenses": {
+      "summary": false,
+      "allowlist": null
+    }
+  }
+}

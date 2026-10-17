@@ -8,7 +8,7 @@ import org.crbf.domain.model.artifact.Artifact;
  * @param artifact The artifact this decision applies to.
  * @param shouldUpgrade Whether the optimiser recommends upgrading this artifact.
  * @param targetVersion The fix version to upgrade to, or {@code null} if not upgrading.
- * @param riskReduction Risk score eliminated by this upgrade (0.0 if not upgrading).
+ * @param potentialRiskAddressed Current contextual risk potentially addressed by this upgrade, not verified reduction (0.0 if not selected).
  * @param effortCost Effort units consumed by this upgrade (0.0 if not upgrading).
  * @param rationale Human-readable explanation of why this decision was taken.
  */
@@ -16,17 +16,17 @@ public record RemediationDecision(
         Artifact artifact,
         boolean shouldUpgrade,
         String targetVersion,
-        double riskReduction,
+        double potentialRiskAddressed,
         double effortCost,
         String rationale
 ) {
     public static RemediationDecision upgrade(
             Artifact artifact,
             String targetVersion,
-            double riskReduction,
+            double potentialRiskAddressed,
             double effortCost,
             String rationale) {
-        return new RemediationDecision(artifact, true, targetVersion, riskReduction, effortCost, rationale);
+        return new RemediationDecision(artifact, true, targetVersion, potentialRiskAddressed, effortCost, rationale);
     }
 
     public static RemediationDecision defer(

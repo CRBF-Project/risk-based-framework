@@ -278,4 +278,17 @@ class RemediationCandidateTest {
                 Set.of(),
                 Set.of());
     }
+    @Test
+    void shouldReportTargetVulnerabilitiesSeparatelyFromIntroducedVulnerableDependencies() {
+        var v = org.crbf.fixture.VulnerabilityFixture.vulnerability("CVE-2026-1001", 8, 0.1);
+        var base = withFix(List.of(VulnerabilityReachability.unknown(v)));
+        var validation = new UpgradePathValidation(base.artifact(), "2.0.0", List.of(v),
+                List.of(base.artifact()), List.of(), List.of(base.artifact()), Optional.empty(), Optional.of(-1.0),
+                UpgradePathStatus.HAS_RISKS, Optional.empty());
+        var c = new RemediationCandidate(base.artifact(), base.vulnerabilities(), base.reachabilityReports(),
+                Optional.empty(), base.fixVersion(), Optional.empty(), Optional.empty(), Optional.empty(), Optional.of(validation));
+        assertTrue(c.stabilityReportSummary()
+                .contains("1 target vulnerabilities; 1 introduced vulnerable dependencies"));
+    }
+
 }

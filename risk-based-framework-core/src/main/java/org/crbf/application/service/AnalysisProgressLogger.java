@@ -224,7 +224,7 @@ public class AnalysisProgressLogger {
             LOG.info("\n  ── RECOMMENDED UPGRADES ──");
             upgrades.forEach(d -> {
                 LOG.info("\n  ✔ UPGRADE  {} → {}", d.artifact().gav(), d.targetVersion());
-                LOG.info("    Risk Reduction : {}", String.format(Locale.ROOT, "%.2f", d.riskReduction()));
+                LOG.info("    Potentially Addressed Risk : {}", String.format(Locale.ROOT, "%.2f", d.potentialRiskAddressed()));
                 LOG.info("    Effort Cost    : {} units", String.format(Locale.ROOT, "%.1f", d.effortCost()));
                 LOG.info("    Rationale      : {}", d.rationale());
             });
@@ -252,8 +252,9 @@ public class AnalysisProgressLogger {
         }
 
         LOG.info("\n  ── SUMMARY ──");
-        LOG.info("  Total Risk Reduction : {}", String.format(Locale.ROOT, "%.2f", plan.totalRiskReduction()));
-        LOG.info("  Residual Risk        : {}", String.format(Locale.ROOT, "%.2f", plan.totalResidualRisk()));
+        LOG.info("  Total Potentially Addressed Risk : {}", String.format(Locale.ROOT, "%.2f", plan.totalPotentialRiskAddressed()));
+        LOG.info("  Unselected Risk      : {}", String.format(Locale.ROOT, "%.2f", plan.totalUnselectedRisk()));
+        LOG.info("  Scores describe selected and unselected current risk, not verified reduction or post-update residual risk.");
         LOG.info("  Total Effort Used    : {} units", String.format(Locale.ROOT, "%.1f", plan.totalEffortCost()));
         LOG.info("═══════════════════════════════════════════════════════════════════");
     }

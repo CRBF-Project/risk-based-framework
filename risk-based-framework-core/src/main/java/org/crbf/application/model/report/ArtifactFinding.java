@@ -4,8 +4,8 @@ import java.util.List;
 
 /**
  * @param contextualRisk The risk of leaving this artifact as it is. Distinct
- *                       from {@code remediation.riskReduction}, which is the
- *                       risk the selected plan actually removes and is zero
+ *                       from {@code remediation.potentialRiskAddressed}, which is the
+ *                       current risk the selected plan potentially addresses and is zero
  *                       whenever no automatic upgrade exists.
  */
 public record ArtifactFinding(
